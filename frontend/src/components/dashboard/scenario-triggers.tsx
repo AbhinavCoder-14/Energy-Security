@@ -1,7 +1,9 @@
 "use client";
 
+import { useRef } from "react";
 import { Check, Loader2, Play } from "lucide-react";
 import type { Scenario, ThreatLevel } from "@/lib/war-room-data";
+import { gsap, useGSAP, prefersReducedMotion } from "@/lib/gsap";
 import { SectionHeading } from "./section-heading";
 
 const dot: Record<ThreatLevel, string> = {
@@ -18,6 +20,95 @@ type Props = {
 };
 
 export function ScenarioTriggers({ scenarios, activeId, launchingId, onLaunch }: Props) {
+  const gridRef = useRef<HTMLDivElement>(null);
+
+  useGSAP(
+    () => {
+      const root = gridRef.current;
+      if (!root || prefersReducedMotion()) return;
+
+      const cards = root.querySelectorAll<HTMLElement>("[data-trigger-card]");
+      const cleanups: Array<() => void> = [];
+
+      cards.forEach((card) => {
+        const enter = () => {
+          gsap.to(card, {
+            y: -2,
+            duration: 0.22,
+            ease: "power2.out",
+            overwrite: "auto",
+          });
+        };
+        const leave = () => {
+          gsap.to(card, {
+            y: 0,
+            scale: 1,
+            duration: 0.28,
+            ease: "power2.out",
+            overwrite: "auto",
+          });
+        };
+        const down = () => {
+          gsap.to(card, {
+            scale: 0.985,
+            duration: 0.12,
+            ease: "power2.out",
+            overwrite: "auto",
+          });
+        };
+        const up = () => {
+          gsap.to(card, {
+            scale: 1,
+            duration: 0.2,
+            ease: "power2.out",
+            overwrite: "auto",
+          });
+        };
+
+        card.addEventListener("pointerenter", enter);
+        card.addEventListener("pointerleave", leave);
+        card.addEventListener("pointerdown", down);
+        card.addEventListener("pointerup", up);
+        card.addEventListener("pointercancel", up);
+
+        cleanups.push(() => {
+          card.removeEventListener("pointerenter", enter);
+          card.removeEventListener("pointerleave", leave);
+          card.removeEventListener("pointerdown", down);
+          card.removeEventListener("pointerup", up);
+          card.removeEventListener("pointercancel", up);
+          gsap.killTweensOf(card);
+        });
+      });
+
+      return () => cleanups.forEach((fn) => fn());
+    },
+    { scope: gridRef, dependencies: [activeId] },
+  );
+
+  useGSAP(
+    () => {
+      const root = gridRef.current;
+      if (!root) return;
+      const activeCard = root.querySelector<HTMLElement>(
+        `[data-trigger-card][data-scenario-id="${activeId}"]`,
+      );
+      if (!activeCard) return;
+
+      if (prefersReducedMotion()) {
+        gsap.set(activeCard, { scale: 1 });
+        return;
+      }
+
+      gsap.fromTo(
+        activeCard,
+        { scale: 0.98 },
+        { scale: 1, duration: 0.35, ease: "power2.out", overwrite: "auto" },
+      );
+    },
+    { dependencies: [activeId], scope: gridRef },
+  );
+
   return (
     <section aria-label="Scenario trigger room">
       <SectionHeading
@@ -26,7 +117,7 @@ export function ScenarioTriggers({ scenarios, activeId, launchingId, onLaunch }:
         description="Pick a geopolitical scenario to run through the resilience pipeline."
       />
 
-      <div className="grid gap-3 md:grid-cols-3">
+      <div ref={gridRef} className="grid gap-3 md:grid-cols-3">
         {scenarios.map((s) => {
           const active = s.id === activeId;
           const launching = s.id === launchingId;
@@ -34,9 +125,11 @@ export function ScenarioTriggers({ scenarios, activeId, launchingId, onLaunch }:
             <button
               key={s.id}
               type="button"
+              data-trigger-card
+              data-scenario-id={s.id}
               onClick={() => onLaunch(s.id)}
               aria-pressed={active}
-              className={`group relative overflow-hidden rounded-md border p-4 text-left transition-all duration-300 ${
+              className={`group relative overflow-hidden rounded-md border p-4 text-left transition-[border-color,background-color,box-shadow] duration-300 will-change-transform ${
                 active
                   ? "border-transparent bg-[var(--wr-panel-2)] shadow-[0_0_0_1px_var(--wr-accent),0_8px_30px_-12px_rgba(0,0,0,0.25)]"
                   : "border-[var(--wr-border)] bg-[var(--wr-panel)] hover:border-[var(--wr-accent)]/60 hover:bg-[var(--wr-panel-2)]"

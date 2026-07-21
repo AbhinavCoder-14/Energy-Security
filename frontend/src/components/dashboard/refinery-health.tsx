@@ -1,64 +1,74 @@
 "use client";
 
-import { Factory } from "lucide-react";
 import { healthThreat, type Scenario, type ThreatLevel } from "@/lib/war-room-data";
+import { useMeterStagger } from "./use-scenario-motion";
 
-const color: Record<ThreatLevel, string> = {
+const barColor: Record<ThreatLevel, string> = {
   safe: "var(--wr-safe)",
   warn: "var(--wr-warn)",
   crit: "var(--wr-crit)",
 };
 
 export function RefineryHealth({ scenario }: { scenario: Scenario }) {
-  return (
-    <div className="flex h-full flex-col rounded-md border border-[var(--wr-border)] bg-[var(--wr-panel)] p-5">
-      <div className="mb-4 flex items-center justify-between">
-        <span className="flex items-center gap-2 font-mono text-[11px] tracking-wider text-[var(--wr-muted)]">
-          <Factory className="h-4 w-4" style={{ color: "var(--wr-accent)" }} />
-          REFINERY STRUCTURAL HEALTH
-        </span>
-        <span className="font-mono text-[10px] text-[var(--wr-muted)]">AGENT 1</span>
-      </div>
+  const rootRef = useMeterStagger(scenario.id);
 
-      <div className="grid flex-1 grid-cols-1 gap-2.5 sm:grid-cols-2">
+  return (
+    <div
+      ref={rootRef}
+      className="wr-batch flex h-full flex-col rounded-2xl border border-[var(--wr-border)] bg-[var(--wr-panel)] p-6 lg:p-7"
+    >
+      <header className="mb-6">
+        <h3 className="font-display text-2xl tracking-tight text-[var(--wr-text)]">
+          Refinery health
+        </h3>
+        <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--wr-muted)]">
+          Structural intake score and feedstock status for key plants.
+        </p>
+      </header>
+
+      <ul className="flex flex-1 flex-col divide-y divide-[var(--wr-border)]">
         {scenario.refineries.map((r) => {
           const tone = healthThreat(r.health);
+          const color = barColor[tone];
           return (
-            <div
-              key={r.name}
-              className="flex flex-col justify-between rounded-sm border border-[var(--wr-border)] bg-[var(--wr-bg)]/50 p-3"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <div className="text-[13px] font-medium text-[var(--wr-text)]">{r.name}</div>
-                  <div className="font-mono text-[10px] text-[var(--wr-muted)]">{r.location}</div>
+            <li key={r.name} className="py-4 first:pt-0 last:pb-0" data-stagger>
+              <div className="flex items-baseline justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-[15px] font-medium tracking-tight text-[var(--wr-text)]">
+                    {r.name}
+                  </p>
+                  <p className="mt-0.5 text-[12px] text-[var(--wr-muted)]">
+                    {r.location}
+                    <span className="mx-1.5 opacity-40" aria-hidden>
+                      ·
+                    </span>
+                    {r.crude}
+                  </p>
                 </div>
                 <span
-                  className="font-mono text-lg font-semibold tabular-nums leading-none"
-                  style={{ color: color[tone] }}
+                  className="tnum shrink-0 font-mono text-2xl font-semibold tabular-nums leading-none"
+                  style={{ color }}
                 >
                   {r.health}
                 </span>
               </div>
-
-              <div className="mt-3">
-                <div className="relative h-1.5 overflow-hidden rounded-full bg-[var(--wr-panel-2)]">
+              <div className="mt-3 flex items-center gap-3">
+                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--wr-bg)]">
                   <div
-                    className="wr-meter-fill absolute inset-y-0 left-0 rounded-full"
-                    style={{ width: `${r.health}%`, backgroundColor: color[tone] }}
+                    data-meter
+                    data-value={r.health}
+                    className="h-full w-full origin-left rounded-full will-change-transform"
+                    style={{ backgroundColor: color }}
                   />
                 </div>
-                <div className="mt-2 flex items-center justify-between">
-                  <span className="font-mono text-[10px] text-[var(--wr-muted)]">{r.crude}</span>
-                  <span className="font-mono text-[10px] font-medium" style={{ color: color[tone] }}>
-                    {r.status}
-                  </span>
-                </div>
+                <span className="shrink-0 text-[12px] font-medium" style={{ color }}>
+                  {r.status}
+                </span>
               </div>
-            </div>
+            </li>
           );
         })}
-      </div>
+      </ul>
     </div>
   );
 }

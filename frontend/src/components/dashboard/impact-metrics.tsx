@@ -1,8 +1,10 @@
 "use client";
 
+import { useRef } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Info, TrendingUp, Timer, Droplets, ArrowUp, ArrowDown } from "lucide-react";
 import type { Scenario, ThreatLevel } from "@/lib/war-room-data";
+import { gsap, useGSAP, prefersReducedMotion } from "@/lib/gsap";
 import { SectionHeading } from "./section-heading";
 import { useCountUp } from "./use-count-up";
 
@@ -34,7 +36,10 @@ function MetricCard({
   math: string;
 }) {
   return (
-    <div className="wr-scanline relative overflow-hidden rounded-md border border-[var(--wr-border)] bg-[var(--wr-panel)] p-5">
+    <div
+      data-metric-card
+      className="wr-scanline relative overflow-hidden rounded-md border border-[var(--wr-border)] bg-[var(--wr-panel)] p-5"
+    >
       <div className="absolute inset-x-0 top-0 h-0.5" style={{ backgroundColor: accent[tone] }} />
       <div className="relative z-10 flex items-start justify-between">
         <span className="flex items-center gap-2 font-mono text-[11px] tracking-wider text-[var(--wr-muted)]">
@@ -68,7 +73,7 @@ function MetricCard({
       </div>
 
       <div className="relative z-10 mt-4 flex items-baseline gap-1.5">
-        <span className="font-mono text-4xl font-semibold tabular-nums tracking-wide lg:text-5xl">
+        <span className="font-mono text-4xl font-semibold tabular-nums tracking-tight lg:text-5xl">
           {display}
         </span>
         <span className="font-mono text-sm text-[var(--wr-muted)]">{unit}</span>
@@ -90,6 +95,7 @@ function MetricCard({
 }
 
 export function ImpactMetrics({ scenario }: { scenario: Scenario }) {
+  const sectionRef = useRef<HTMLElement>(null);
   const brent = useCountUp(scenario.brent);
   const spr = useCountUp(scenario.sprDays);
   const shortfall = useCountUp(scenario.shortfall);
@@ -98,8 +104,34 @@ export function ImpactMetrics({ scenario }: { scenario: Scenario }) {
   const brentPct = Math.round((brentDelta / scenario.brentBaseline) * 100);
   const sprDelta = scenario.sprDays - 92;
 
+  useGSAP(
+    () => {
+      const cards = sectionRef.current?.querySelectorAll("[data-metric-card]");
+      if (!cards?.length) return;
+
+      if (prefersReducedMotion()) {
+        gsap.set(cards, { autoAlpha: 1, y: 0 });
+        return;
+      }
+
+      gsap.fromTo(
+        cards,
+        { autoAlpha: 0.35, y: 8 },
+        {
+          autoAlpha: 1,
+          y: 0,
+          duration: 0.45,
+          ease: "power2.out",
+          stagger: 0.08,
+          overwrite: "auto",
+        },
+      );
+    },
+    { dependencies: [scenario.id], scope: sectionRef },
+  );
+
   return (
-    <section aria-label="Economic impact">
+    <section ref={sectionRef} aria-label="Economic impact">
       <SectionHeading
         index="02"
         title="Economic impact"

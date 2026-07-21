@@ -2,7 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { scenarios } from "@/lib/war-room-data";
-import { gsap, useGSAP, prefersReducedMotion } from "@/lib/gsap";
+import { gsap, ScrollTrigger, useGSAP, prefersReducedMotion } from "@/lib/gsap";
 import { Navigation } from "@/components/landing/navigation";
 import { FooterSection } from "@/components/landing/footer-section";
 import { ScenarioTriggers } from "./scenario-triggers";
@@ -40,13 +40,34 @@ export function WarRoom() {
     () => {
       if (prefersReducedMotion()) {
         gsap.set("[data-wr-reveal]", { opacity: 1, y: 0 });
+        gsap.set(".wr-batch", { opacity: 1, y: 0 });
         return;
       }
+
       gsap.fromTo(
         "[data-wr-reveal]",
         { opacity: 0, y: 18 },
         { opacity: 1, y: 0, duration: 0.6, ease: "power2.out", stagger: 0.1 },
       );
+
+      const batchTargets = gsap.utils.toArray<HTMLElement>(".wr-batch");
+      if (batchTargets.length === 0) return;
+
+      gsap.set(batchTargets, { opacity: 0, y: 22 });
+      ScrollTrigger.batch(batchTargets, {
+        start: "top 85%",
+        once: true,
+        onEnter: (elements) => {
+          gsap.to(elements, {
+            opacity: 1,
+            y: 0,
+            duration: 0.55,
+            ease: "power2.out",
+            stagger: 0.08,
+            overwrite: "auto",
+          });
+        },
+      });
     },
     { scope: rootRef },
   );
@@ -84,23 +105,22 @@ export function WarRoom() {
               <ImpactMetrics scenario={active} />
             </div>
 
-            <section data-wr-reveal aria-label="Tactical breakdown">
-              <SectionHeading
-                index="03"
-                title="Tactical breakdown"
-                description="Chokepoint risk, refinery health, and the prioritized executive brief."
-              />
+            <section aria-label="Tactical brief">
+              <div className="wr-batch">
+                <SectionHeading
+                  index="03"
+                  title="Tactical brief"
+                  description="Where risk sits on the water, how plants are holding, and what to do next."
+                />
+              </div>
 
-              <div className="grid gap-3 lg:grid-cols-3">
-                <div className="lg:col-span-1">
-                  <ChokepointMatrix scenario={active} />
-                </div>
-                <div className="lg:col-span-1">
-                  <RefineryHealth scenario={active} />
-                </div>
-                <div className="lg:col-span-1">
-                  <ExecutiveBrief scenario={active} />
-                </div>
+              <div className="grid gap-4 lg:grid-cols-2 lg:gap-5">
+                <ChokepointMatrix scenario={active} />
+                <RefineryHealth scenario={active} />
+              </div>
+
+              <div className="mt-4 lg:mt-5">
+                <ExecutiveBrief scenario={active} />
               </div>
             </section>
           </div>
