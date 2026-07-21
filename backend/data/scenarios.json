@@ -1,0 +1,71 @@
+{
+  "strait_of_hormuz_closure": {
+    "risk_data": {
+      "scenario_id": "strait_of_hormuz_closure",
+      "timestamp": "2026-07-20T00:00:00Z",
+      "active_threats": [
+        {
+          "route_name": "Strait_of_Hormuz",
+          "base_risk_score": 92.5,
+          "risk_delta": 62.0,
+          "primary_threat_driver": "Kinetic naval escalation and military blockade threat",
+          "confidence_score": 95.0
+        },
+        {
+          "route_name": "Bab_el_Mandeb",
+          "base_risk_score": 35.0,
+          "risk_delta": 5.0,
+          "primary_threat_driver": "Collateral regional tension levels",
+          "confidence_score": 80.0
+        }
+      ],
+      "system_rationale": "High-intensity crisis indicators detected near Iranian territorial waters, creating significant structural maritime transit risk."
+    }
+  },
+  "baseline_peace": {
+    "risk_data": {
+      "scenario_id": "baseline_peace",
+      "timestamp": "2026-07-20T00:00:00Z",
+      "active_threats": [
+        {
+          "route_name": "Strait_of_Hormuz",
+          "base_risk_score": 15.0,
+          "risk_delta": 0.0,
+          "primary_threat_driver": "Standard operating baseline friction",
+          "confidence_score": 99.0
+        },
+        {
+          "route_name": "Bab_el_Mandeb",
+          "base_risk_score": 18.0,
+          "risk_delta": 0.0,
+          "primary_threat_driver": "Routine Red Sea transit monitoring",
+          "confidence_score": 97.0
+        }
+      ],
+      "system_rationale": "Global energy shipping corridors are operating normally within standard historical variance parameters."
+    }
+  },
+  "bab_el_mandeb_escalation": {
+    "risk_data": {
+      "scenario_id": "bab_el_mandeb_escalation",
+      "timestamp": "2026-07-20T00:00:00Z",
+      "active_threats": [
+        {
+          "route_name": "Bab_el_Mandeb",
+          "base_risk_score": 88.0,
+          "risk_delta": 55.0,
+          "primary_threat_driver": "Sustained drone/missile attacks on commercial tankers; active shipping diversions",
+          "confidence_score": 92.0
+        },
+        {
+          "route_name": "Strait_of_Hormuz",
+          "base_risk_score": 28.0,
+          "risk_delta": 8.0,
+          "primary_threat_driver": "Secondary tension spillover from Red Sea escalation",
+          "confidence_score": 85.0
+        }
+      ],
+      "system_rationale": "Acute kinetic escalation in the Bab-el-Mandeb / Red Sea corridor forcing Cape of Good Hope reroutes and elevated war-risk insurance."
+    }
+  }
+}

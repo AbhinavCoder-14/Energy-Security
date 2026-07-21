@@ -1,0 +1,34 @@
+# TasteSkill Core Principles - Aegis Energy Security Platform
+
+# Design System Configuration
+- THEME: Dark Mode Default (Canvas: #090C10, Surfaces: #121721 with 80% opacity backdrop-blur-md)
+- BORDERS: Subtle 1px borders using `border-slate-800/80` or `border-white/10`
+- TYPOGRAPHY: 
+  - Sans-serif for UI labels and executive memos
+  - Monospace (`font-mono`) for ALL numerical data ($ pricing, MBPD metrics, reserve days, risk scores)
+- RADIUS: `rounded-2xl` for main cards, `rounded-lg` for badges/buttons
+- BADGES: Always use semi-transparent filled pills with matching colored borders (e.g., `bg-emerald-500/10 text-emerald-400 border border-emerald-500/20`)
+
+# Anti-Slop Constraints
+- NEVER render standard white cards or plain light gray backgrounds.
+- NEVER use heavy generic drop shadows (`shadow-2xl`). Use subtle glow accents or border highlights.
+- NEVER hardcode economic calculations in the UI—always bind numbers dynamically to the backend API payload.
+- ALWAYS include subtle hover micro-interactions (`hover:border-slate-700 transition-all duration-200`) on interactive cards.
+
+
+
+
+# Skill Integration Hierarchy
+PRIMARY_STYLE_ENGINE: design-taste-frontend (TasteSkill)
+PRIMARY_UX_ENGINE: ui-ux-pro-max
+
+# Authority Rules
+1. VISUAL AESTHETICS (TasteSkill):
+   - All colors, card surfaces, gradients, typography, and density MUST follow TasteSkill locks.
+   - Theme: Deep dark canvas (#090C10), semi-transparent cards (#121721), font-mono numbers.
+   - BANNED: Do not allow UI/UX Pro Max to suggest light-mode palettes, AI-purple gradients, or unstyled cards.
+
+2. ACCESSIBILITY & USABILITY (UI/UX Pro Max):
+   - Apply UI/UX Pro Max rules for interactive states: focus-visible rings, ARIA labels, and screen-reader accessibility.
+   - Use UI/UX Pro Max rules for modal dialogs: ESC key handlers, backdrop blur locks, and keyboard focus trap.
+   - Ensure touch targets and button loading spinners follow UI/UX Pro Max best practices.

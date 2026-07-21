@@ -1,0 +1,113 @@
+"use client";
+
+import { useCallback, useRef, useState } from "react";
+import { scenarios } from "@/lib/war-room-data";
+import { gsap, useGSAP, prefersReducedMotion } from "@/lib/gsap";
+import { Navigation } from "@/components/landing/navigation";
+import { FooterSection } from "@/components/landing/footer-section";
+import { ScenarioTriggers } from "./scenario-triggers";
+import { ImpactMetrics } from "./impact-metrics";
+import { ChokepointMatrix } from "./chokepoint-matrix";
+import { RefineryHealth } from "./refinery-health";
+import { ExecutiveBrief } from "./executive-brief";
+import { SectionHeading } from "./section-heading";
+
+export function WarRoom() {
+  const [activeId, setActiveId] = useState(scenarios[0].id);
+  const [launchingId, setLaunchingId] = useState<string | null>(null);
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const rootRef = useRef<HTMLElement>(null);
+
+  const active = scenarios.find((s) => s.id === activeId) ?? scenarios[0];
+
+  const handleLaunch = useCallback(
+    (id: string) => {
+      if (id === activeId || id === launchingId) return;
+      timers.current.forEach(clearTimeout);
+      timers.current = [];
+      setLaunchingId(id);
+      timers.current.push(
+        setTimeout(() => {
+          setActiveId(id);
+          setLaunchingId(null);
+        }, 620),
+      );
+    },
+    [activeId, launchingId],
+  );
+
+  useGSAP(
+    () => {
+      if (prefersReducedMotion()) {
+        gsap.set("[data-wr-reveal]", { opacity: 1, y: 0 });
+        return;
+      }
+      gsap.fromTo(
+        "[data-wr-reveal]",
+        { opacity: 0, y: 18 },
+        { opacity: 1, y: 0, duration: 0.6, ease: "power2.out", stagger: 0.1 },
+      );
+    },
+    { scope: rootRef },
+  );
+
+  return (
+    <div className="theme-landing flex min-h-[100dvh] flex-col bg-background text-foreground">
+      <Navigation solid />
+
+      <main ref={rootRef} className="war-room flex-1">
+        <div className="wr-grid-bg min-h-full">
+          <div className="mx-auto flex max-w-[1600px] flex-col gap-8 px-4 pb-12 pt-28 lg:gap-10 lg:px-10 lg:pt-32">
+            <header data-wr-reveal className="max-w-2xl">
+              <p className="font-mono text-[11px] tracking-wider text-[var(--wr-muted)]">
+                Supply chain resilience
+              </p>
+              <h1 className="mt-2 font-display text-4xl tracking-tight text-[var(--wr-text)] lg:text-5xl">
+                War room
+              </h1>
+              <p className="mt-3 text-[15px] leading-relaxed text-[var(--wr-muted)]">
+                Run a geopolitical shock simulation. Watch price, reserves, and chokepoint
+                risk update as the three-agent pipeline delivers a decision-grade brief.
+              </p>
+            </header>
+
+            <div data-wr-reveal>
+              <ScenarioTriggers
+                scenarios={scenarios}
+                activeId={activeId}
+                launchingId={launchingId}
+                onLaunch={handleLaunch}
+              />
+            </div>
+
+            <div data-wr-reveal>
+              <ImpactMetrics scenario={active} />
+            </div>
+
+            <section data-wr-reveal aria-label="Tactical breakdown">
+              <SectionHeading
+                index="03"
+                title="Tactical breakdown"
+                description="Chokepoint risk, refinery health, and the prioritized executive brief."
+              />
+
+              <div className="grid gap-3 lg:grid-cols-3">
+                <div className="lg:col-span-1">
+                  <ChokepointMatrix scenario={active} />
+                </div>
+                <div className="lg:col-span-1">
+                  <RefineryHealth scenario={active} />
+                </div>
+                <div className="lg:col-span-1">
+                  <ExecutiveBrief scenario={active} />
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </main>
+
+      <FooterSection />
+    </div>
+  );
+}

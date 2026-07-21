@@ -1,0 +1,366 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   Aegis Energy — neutral charcoal palette (reference-led)
+   Dark default. Light via html.light. No blue canvas wash.
+   ============================================================ */
+:root {
+  /* Type — v0 parity: Instrument Sans (UI), Instrument Serif (display), JetBrains
+     (mono). Loaded at runtime via <link>; falls back to Geist/system offline. */
+  --font-sans: "Instrument Sans", var(--font-geist-sans), system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", var(--font-geist-mono), ui-monospace, monospace;
+  --font-display: "Instrument Serif", Georgia, "Times New Roman", serif;
+  --font-heading: "Instrument Serif", Georgia, "Times New Roman", serif;
+
+  /* ---- shadcn / v0 landing tokens (bare oklch components for <alpha-value>) ---- */
+  --background: 0.985 0.002 90;
+  --foreground: 0.12 0.01 60;
+  --card: 1 0 0;
+  --card-foreground: 0.12 0.01 60;
+  --popover: 1 0 0;
+  --popover-foreground: 0.12 0.01 60;
+  --muted: 0.94 0.005 90;
+  --muted-foreground: 0.45 0.02 60;
+  --border: 0.88 0.01 90;
+  --input: 0.92 0.01 90;
+  --ring: 0.12 0.01 60;
+  --destructive: 0.577 0.245 27.325;
+  --destructive-foreground: 0.985 0.002 90;
+
+  --canvas: 10 10 11; /* #0A0A0B ink matte */
+  --surface: 22 24 28; /* #16181C floating card */
+  --surface-2: 28 30 36; /* #1C1E24 nested / inset */
+  --hairline: 38 40 46; /* #26282E crisp 1px border */
+  --hairline-strong: 52 55 62; /* #34373E */
+  --text: 250 250 250; /* #FAFAFA primary */
+  --text-2: 161 161 170; /* #A1A1AA secondary */
+  --text-3: 113 113 122; /* #71717A mute */
+  --accent: 96 165 250; /* #60A5FA cerulean — CTAs only */
+  --amber: 251 191 36; /* #FBBF24 muted warning */
+  --alert: 251 113 133; /* #FB7185 soft rose */
+  --safe: 52 211 153; /* #34D399 emerald */
+}
+
+html.light {
+  --canvas: 250 250 250;
+  --surface: 255 255 255;
+  --surface-2: 244 244 245;
+  --hairline: 228 228 231;
+  --hairline-strong: 212 212 216;
+  --text: 24 24 27;
+  --text-2: 82 82 91;
+  --text-3: 113 113 122;
+  --accent: 37 99 235;
+  --amber: 217 119 6;
+  --alert: 225 29 72;
+  --safe: 5 150 105;
+}
+
+/* Landing cream/ink remapped onto the app token set (live + war-room shells) */
+.theme-landing {
+  --canvas: 250 248 243; /* warm cream ≈ landing background */
+  --surface: 255 255 255;
+  --surface-2: 244 241 235;
+  --hairline: 224 220 210;
+  --hairline-strong: 196 190 178;
+  --text: 28 24 18;
+  --text-2: 90 84 74;
+  --text-3: 130 122 110;
+  --accent: 37 99 235;
+  --amber: 180 100 10;
+  --alert: 190 45 55;
+  --safe: 20 130 90;
+  color: rgb(var(--text));
+  background: rgb(var(--canvas));
+}
+
+.theme-landing .panel {
+  box-shadow:
+    0 1px 0 0 rgb(var(--hairline) / 0.9),
+    0 1px 3px 0 rgb(0 0 0 / 0.04);
+}
+
+.theme-landing .shadow-inset-top {
+  box-shadow: inset 0 1px 0 0 rgb(0 0 0 / 0.04);
+}
+
+html.light .panel {
+  box-shadow:
+    0 1px 0 0 rgb(var(--hairline) / 0.8),
+    0 1px 3px 0 rgb(0 0 0 / 0.06);
+}
+
+html.light .shadow-inset-top {
+  box-shadow: inset 0 1px 0 0 rgb(0 0 0 / 0.04);
+}
+
+@layer base {
+  html {
+    @apply font-sans;
+  }
+
+  body {
+    color: rgb(var(--text));
+    background: rgb(var(--canvas));
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .tracking-label {
+    letter-spacing: 0.06em;
+  }
+
+  .tracking-data {
+    letter-spacing: 0.04em;
+  }
+
+  .tracking-prose {
+    letter-spacing: 0.01em;
+  }
+
+  /* Shared card surface — neutral elevation, no blue tint */
+  .panel {
+    @apply rounded-2xl border border-hairline bg-surface shadow-card;
+  }
+
+  .scenario-preview-card {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .shimmer-track {
+    position: relative;
+    overflow: hidden;
+  }
+  .shimmer-track::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgb(var(--text) / 0.04),
+      transparent
+    );
+    animation: shimmer 1.6s infinite;
+  }
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--hairline-strong)) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgb(var(--hairline-strong) / 0.7);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* ============================================================
+   v0 landing utilities (ported from cursor-effect-implementation)
+   ============================================================ */
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+  }
+
+  .text-stroke {
+    -webkit-text-stroke: 1.5px currentColor;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .marquee {
+    animation: marquee 30s linear infinite;
+  }
+
+  .marquee-reverse {
+    animation: marquee-reverse 25s linear infinite;
+  }
+
+  @keyframes marquee {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
+  @keyframes marquee-reverse {
+    0% {
+      transform: translateX(-50%);
+    }
+    100% {
+      transform: translateX(0);
+    }
+  }
+
+  .line-reveal {
+    clip-path: inset(0 100% 0 0);
+    animation: line-reveal 0.8s cubic-bezier(0.77, 0, 0.175, 1) forwards;
+  }
+
+  @keyframes line-reveal {
+    to {
+      clip-path: inset(0 0 0 0);
+    }
+  }
+
+  .hover-lift {
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-4px);
+  }
+
+  .letter-spin {
+    display: inline-block;
+    transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .letter-spin:hover {
+    transform: rotateY(360deg);
+  }
+
+  .animate-char-in {
+    animation: char-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    opacity: 0;
+    filter: blur(40px);
+    transform: translateY(100%);
+  }
+
+  @keyframes char-in {
+    0% {
+      opacity: 0;
+      filter: blur(40px);
+      transform: translateY(100%);
+    }
+    100% {
+      opacity: 1;
+      filter: blur(0);
+      transform: translateY(0);
+    }
+  }
+
+  .noise-overlay {
+    position: relative;
+  }
+
+  .noise-overlay::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    opacity: 0.03;
+    pointer-events: none;
+    z-index: 1;
+  }
+}
+
+/* ============================================================
+   Aegis War Room — light tactical theme (matches landing vibe)
+   Self-contained under .war-room with its own --wr-* tokens.
+   ============================================================ */
+.war-room {
+  --wr-bg: oklch(0.985 0.002 90);
+  --wr-panel: oklch(1 0 0);
+  --wr-panel-2: oklch(0.965 0.004 90);
+  --wr-border: oklch(0.88 0.01 90);
+  --wr-text: oklch(0.16 0.01 60);
+  --wr-muted: oklch(0.47 0.02 60);
+  --wr-safe: oklch(0.55 0.14 155);
+  --wr-warn: oklch(0.62 0.15 70);
+  --wr-crit: oklch(0.55 0.22 25);
+  --wr-accent: oklch(0.52 0.13 245);
+
+  background-color: var(--wr-bg);
+  color: var(--wr-text);
+  font-family: var(--font-sans);
+}
+
+.war-room .wr-grid-bg {
+  background-image:
+    linear-gradient(to right, oklch(0.55 0.02 250 / 0.09) 1px, transparent 1px),
+    linear-gradient(to bottom, oklch(0.55 0.02 250 / 0.09) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+.war-room .wr-scanline::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 3px,
+    oklch(0 0 0 / 0.035) 3px,
+    oklch(0 0 0 / 0.035) 4px
+  );
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+@keyframes wr-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+.war-room .wr-pulse {
+  animation: wr-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes wr-sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(300%);
+  }
+}
+.war-room .wr-sweep::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, oklch(0 0 0 / 0.05), transparent);
+  animation: wr-sweep 3.5s ease-in-out infinite;
+}
+
+.war-room .wr-meter-fill {
+  transition:
+    width 0.9s cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 0.6s ease;
+}

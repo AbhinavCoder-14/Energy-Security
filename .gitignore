@@ -1,0 +1,129 @@
+# =========================
+# Dependencies
+# =========================
+node_modules/
+.pnp
+.pnp.js
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# =========================
+# Environment & secrets
+# =========================
+.env
+.env.*
+!.env.example
+!.env*.example
+*.pem
+*.key
+credentials.json
+secrets.json
+
+# =========================
+# Next.js / frontend build
+# =========================
+.next/
+out/
+build/
+dist/
+.turbo/
+*.tsbuildinfo
+
+# =========================
+# Python / backend
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+dist/
+*.egg
+.venv/
+venv/
+ENV/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.cover
+
+# =========================
+# Logs & debug
+# =========================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# =========================
+# Testing & coverage
+# =========================
+coverage/
+.nyc_output/
+
+# =========================
+# OS files
+# =========================
+.DS_Store
+.DS_Store?
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# =========================
+# IDE / editor
+# =========================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# =========================
+# Cursor local (keep .cursorrules at root)
+# =========================
+.cursor/
+!.cursorrules
+
+# =========================
+# Local scratch / temp dumps (do not commit)
+# =========================
+df.txt
+discover.js
+discover.txt
+emit-err.txt
+emit-out.json
+emit-out2.json
+emit.js
+filter.js
+npmv.txt
+nv.txt
+_py_ver.txt
+agent1.md
+agent2.md
+MEMORY.md
+INSTRUCTION.md
+step.md
+Content.md
+
+# Generic temp / dump patterns
+*.tmp
+*.temp
+*.bak
+*.cache
+*.local
+.cache/
+tmp/
+temp/
