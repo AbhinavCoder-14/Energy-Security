@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { WarRoomLoader } from "@/components/dashboard/war-room-loader";
 
 /**
  * GSAP must stay out of the RSC/server vendor graph. Load the war room
@@ -11,13 +12,7 @@ const WarRoom = dynamic(
     import("@/components/dashboard/war-room").then((m) => m.WarRoom),
   {
     ssr: false,
-    loading: () => (
-      <main className="war-room flex min-h-screen items-center justify-center">
-        <span className="font-mono text-xs tracking-widest text-[var(--wr-muted)]">
-          INITIALIZING WAR ROOM…
-        </span>
-      </main>
-    ),
+    loading: () => <WarRoomLoader />,
   },
 );
 

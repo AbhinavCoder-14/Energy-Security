@@ -3,7 +3,11 @@
 import { useEffect, useRef } from "react";
 import { foregroundRgb, reducedMotion } from "./canvas-utils";
 
-export function AnimatedSphere() {
+type AnimatedSphereProps = {
+  className?: string;
+};
+
+export function AnimatedSphere({ className }: AnimatedSphereProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const frameRef = useRef(0);
 
@@ -92,6 +96,11 @@ export function AnimatedSphere() {
   }, []);
 
   return (
-    <canvas ref={canvasRef} className="w-full h-full" style={{ display: "block" }} />
+    <canvas
+      ref={canvasRef}
+      className={className ?? "h-full w-full"}
+      style={{ display: "block" }}
+      aria-hidden
+    />
   );
 }

@@ -141,11 +141,11 @@ export function HeroSection() {
             <Button
               asChild
               size="lg"
-              className="bg-foreground hover:bg-foreground/90 text-background px-8 h-14 text-base rounded-full group"
+              className="h-14 rounded-full bg-foreground px-14 text-base text-background hover:bg-foreground/90 has-[>svg]:px-14 group"
             >
               <a href="/dashboard">
                 Launch War Room
-                <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
+                <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
               </a>
             </Button>
             <Button
