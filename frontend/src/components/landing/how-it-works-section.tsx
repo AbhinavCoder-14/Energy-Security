@@ -8,7 +8,7 @@ const steps = [
     number: "I",
     title: "Ingest global signals",
     description:
-      "Agent 1 pulls live maritime traffic, tanker positions, and geopolitical feeds to map exposure across every chokepoint.",
+      "Agent 1 ingests live chokepoint news signals and maps geopolitical risk across Hormuz, Bab-el-Mandeb, and related corridors.",
     code: `import { aegis } from '@aegis/core'
 
 aegis.ingest({

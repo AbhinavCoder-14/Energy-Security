@@ -3,12 +3,15 @@ Static industry knowledge base and 2026 economic baselines.
 Source of truth for Agent 2 math and Agent 3 slate matching.
 """
 
+import os
+
 # Constants matching 2026 economic baselines
 GLOBAL_SUPPLY_MBPD = 102.0
 BRENT_BASE_PRICE = 75.0
 INDIA_SPR_TOTAL_BARRELS = 39_000_000  # ~9.5 days of operational cover
 INDIA_TOTAL_IMPORTS_MBPD = 5.0
 TOTAL_SYSTEM_CAPACITY_KBPD = 1850.0
+ELASTICITY_FACTOR = 120.0
 
 INDIA_REFINERY_SLATE_MATRIX = {
     "IOCL_Paradip": {
@@ -84,3 +87,16 @@ ALTERNATIVE_LOGISTICS_MATRIX = {
 
 OPENROUTER_MODEL = "google/gemini-2.5-flash"
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+
+# Demo / latency controls
+AEGIS_DEMO_MODE = os.getenv("AEGIS_DEMO_MODE", "").strip().lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
+AGENT1_NEWS_TIMEOUT_S = 2.0
+AGENT1_LLM_TIMEOUT_S = 4.0
+AGENT3_LLM_TIMEOUT_S = 8.0
+SIMULATE_WALL_CLOCK_BUDGET_S = 18.0
+NEWS_CACHE_TTL_S = 60.0

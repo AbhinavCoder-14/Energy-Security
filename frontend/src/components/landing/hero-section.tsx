@@ -154,7 +154,7 @@ export function HeroSection() {
               variant="outline"
               className="h-14 px-8 text-base rounded-full border-foreground/20 hover:bg-foreground/5"
             >
-              <a href="/dashboard/live">View live feed</a>
+              <a href="#how-it-works">How the pipeline works</a>
             </Button>
           </div>
         </div>
@@ -167,7 +167,7 @@ export function HeroSection() {
               {[
                 { value: "21M", label: "barrels/day monitored", company: "CHOKEPOINTS" },
                 { value: "94s", label: "to model a full shock", company: "PIPELINE" },
-                { value: "17", label: "refineries tracked live", company: "STRUCTURAL" },
+                { value: "3", label: "Indian refineries modeled", company: "STRUCTURAL" },
                 { value: "6", label: "shipping routes scored", company: "MARITIME" },
               ].map((stat) => (
                 <div key={`${stat.company}-${i}`} className="flex items-baseline gap-4">

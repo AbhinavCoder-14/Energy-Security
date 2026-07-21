@@ -38,7 +38,7 @@ export function InfrastructureSection() {
             </h2>
             <p className="text-xl text-muted-foreground leading-relaxed mb-12">
               Over 60% of seaborne crude passes through a handful of narrow straits.
-              Aegis watches every one in real time, scoring threat as tension escalates.
+              Aegis scores chokepoint threat from live news signals and scenario models.
             </p>
 
             <div className="grid grid-cols-3 gap-8">
@@ -51,8 +51,8 @@ export function InfrastructureSection() {
                 <div className="text-sm text-muted-foreground">Seaborne crude</div>
               </div>
               <div>
-                <div className="text-4xl lg:text-5xl font-display mb-2">24/7</div>
-                <div className="text-sm text-muted-foreground">Live tracking</div>
+                <div className="text-4xl lg:text-5xl font-display mb-2">3</div>
+                <div className="text-sm text-muted-foreground">Agent pipeline</div>
               </div>
             </div>
           </Reveal>
@@ -63,7 +63,7 @@ export function InfrastructureSection() {
                 <span className="text-sm font-mono text-muted-foreground">Chokepoint Monitor</span>
                 <span className="flex items-center gap-2 text-xs font-mono text-green-600">
                   <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                  Feeds live
+                  Simulation ready
                 </span>
               </div>
 

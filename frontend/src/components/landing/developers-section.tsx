@@ -39,7 +39,7 @@ console.log('Brent:', shock.brent)`,
 const features = [
   { title: "TypeScript native", description: "Full type safety with auto-generated scenario types." },
   { title: "Auditable outputs", description: "Every figure ships with its source math." },
-  { title: "Streaming feeds", description: "Subscribe to live chokepoint and price signals." },
+  { title: "Simulation API", description: "Trigger scenario runs and stream agent-stage progress." },
   { title: "Air-gap ready", description: "Deploy inside sovereign, offline environments." },
 ];
 

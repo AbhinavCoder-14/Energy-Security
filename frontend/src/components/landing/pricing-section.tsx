@@ -24,7 +24,7 @@ const plans = [
     price: { monthly: 2900, annual: 2400 },
     features: [
       "Unlimited scenarios",
-      "Real-time feeds",
+      "Scenario simulations",
       "Refinery health tracking",
       "Auditable math on every metric",
       "Executive brief generation",

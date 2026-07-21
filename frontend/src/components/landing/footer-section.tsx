@@ -13,7 +13,7 @@ const footerLinkGroups = {
   ],
   Intelligence: [
     { name: "Documentation", hash: "#developers" },
-    { name: "Live feed", href: "/dashboard/live" },
+    { name: "War Room", href: "/dashboard" },
     { name: "SDK", hash: "#developers" },
     { name: "Data sources", hash: "#integrations" },
   ],
@@ -62,7 +62,7 @@ export function FooterSection() {
 
               <p className="text-muted-foreground leading-relaxed mb-8 max-w-xs">
                 The supply chain resilience core. Geopolitical situational awareness for
-                energy security, in real time.
+                energy security, with auditable math.
               </p>
 
               <div className="flex gap-6">

@@ -1,24 +1,41 @@
-export type ThreatLevel = "safe" | "warn" | "crit";
+import type {
+  PipelineMeta,
+  ScenarioCatalogItem,
+  ScenarioId,
+  ThreatLevel,
+  UnifiedDashboardPayload,
+} from "@/lib/types";
+import { SCENARIO_CATALOG } from "@/lib/types";
+
+export type { ThreatLevel };
 
 export type Chokepoint = {
   name: string;
   route: string;
-  risk: number; // 0-100
-  flow: string; // Mb/d label
+  risk: number;
+  flow: string;
+  driver?: string;
 };
 
 export type Refinery = {
   name: string;
   location: string;
-  health: number; // 0-100 structural health
-  crude: string; // required crude chemistry
-  status: string; // short status label
+  health: number;
+  crude: string;
+  status: string;
+  runDays?: number;
+  shortfallBpd?: number;
 };
 
 export type Directive = {
   priority: "CRITICAL" | "HIGH" | "MONITOR";
   action: string;
   detail: string;
+  volume_mbpd?: number;
+  estimated_delivery_days?: number;
+  crude_slate_compatibility?: string;
+  financial_cost_multiplier?: number;
+  source_region?: string;
 };
 
 export type Scenario = {
@@ -27,131 +44,182 @@ export type Scenario = {
   codename: string;
   posture: ThreatLevel;
   summary: string;
-  brent: number; // $ / barrel
-  brentBaseline: number; // for delta math
-  sprDays: number; // strategic reserve cover, days remaining
-  shortfall: number; // Mb/d disrupted
+  brent: number;
+  brentBaseline: number;
+  sprDays: number;
+  shortfall: number;
+  freightPremium: number;
+  warRiskMultiplier: number;
   chokepoints: Chokepoint[];
   refineries: Refinery[];
   brief: Directive[];
+  memo?: string;
   math: {
     brent: string;
     spr: string;
     shortfall: string;
   };
+  meta?: PipelineMeta;
+  systemRationale?: string;
+  intelSnippets?: { route_name: string; title: string; source: string }[];
 };
 
-export const BASE_BRENT = 82;
+const ROUTE_LABELS: Record<string, { name: string; corridor: string }> = {
+  Strait_of_Hormuz: { name: "Strait of Hormuz", corridor: "Persian Gulf" },
+  Bab_el_Mandeb: { name: "Bab-el-Mandeb", corridor: "Red Sea" },
+  Suez_Canal: { name: "Suez Canal", corridor: "Egypt" },
+};
 
-export const scenarios: Scenario[] = [
-  {
-    id: "baseline",
-    name: "Baseline Peace",
-    codename: "SCN-00 / STEADY STATE",
-    posture: "safe",
-    summary:
-      "Nominal global flows. No active disruption across monitored chokepoints. Reserves and refinery intake within normal operating bands.",
-    brent: 82,
+const REFINERY_META: Record<string, { name: string; location: string; crude: string }> = {
+  IOCL_Paradip: { name: "Paradip", location: "Odisha, IN", crude: "Heavy sour" },
+  RIL_Jamnagar: { name: "Jamnagar", location: "Gujarat, IN", crude: "Ultra-heavy sour" },
+  BPCL_Kochi: { name: "Kochi", location: "Kerala, IN", crude: "Medium sour / light sweet" },
+};
+
+export const BASE_BRENT = 75;
+
+/** Catalog cards for the trigger room (static labels; live metrics come from API). */
+export const scenarios: Scenario[] = SCENARIO_CATALOG.map((c) => catalogToPlaceholder(c));
+
+function catalogToPlaceholder(c: ScenarioCatalogItem): Scenario {
+  return {
+    id: c.id,
+    name: c.label,
+    codename: c.codename,
+    posture: c.severity,
+    summary: c.blurb,
+    brent: BASE_BRENT,
     brentBaseline: BASE_BRENT,
-    sprDays: 92,
+    sprDays: 9.5,
     shortfall: 0,
-    chokepoints: [
-      { name: "Strait of Hormuz", route: "Persian Gulf", risk: 18, flow: "21.0M b/d" },
-      { name: "Strait of Malacca", route: "SE Asia", risk: 22, flow: "16.0M b/d" },
-      { name: "Suez Canal", route: "Egypt", risk: 14, flow: "9.0M b/d" },
-      { name: "Bab-el-Mandeb", route: "Red Sea", risk: 20, flow: "6.2M b/d" },
-      { name: "Turkish Straits", route: "Bosphorus", risk: 12, flow: "3.0M b/d" },
-    ],
-    refineries: [
-      { name: "Jamnagar", location: "Gujarat, IN", health: 96, crude: "Heavy sour", status: "Optimal intake" },
-      { name: "Paradip", location: "Odisha, IN", health: 94, crude: "Medium sour", status: "Optimal intake" },
-      { name: "Vadinar", location: "Gujarat, IN", health: 92, crude: "Heavy sour", status: "Optimal intake" },
-      { name: "Mangalore", location: "Karnataka, IN", health: 95, crude: "Light sweet", status: "Optimal intake" },
-    ],
-    brief: [
-      { priority: "MONITOR", action: "Maintain standard procurement cadence", detail: "No rerouting required. Continue term-contract lifting at contracted volumes." },
-      { priority: "MONITOR", action: "Hold strategic reserves at policy target", detail: "SPR cover at 92 days, above the 90-day statutory floor. No drawdown indicated." },
-      { priority: "MONITOR", action: "Keep chokepoint watch at Level 1", detail: "All maritime routes green. Sustain routine AIS and conflict-signal monitoring." },
-    ],
+    freightPremium: 0,
+    warRiskMultiplier: 1,
+    chokepoints: [],
+    refineries: [],
+    brief: [],
     math: {
-      brent: "Baseline Brent anchored at $82.00 from 30-day volume-weighted average. No shock premium applied.",
-      spr: "Reserve cover = total reserve stock / daily net imports. At nominal 3.2M b/d net imports this yields 92 days.",
-      shortfall: "No monitored chokepoint is disrupted, so modeled import shortfall is 0.0M b/d.",
+      brent: "Awaiting Agent 2 calculation.",
+      spr: "Awaiting Agent 2 calculation.",
+      shortfall: "Awaiting Agent 2 calculation.",
     },
-  },
-  {
-    id: "hormuz",
-    name: "Strait of Hormuz Blockade",
-    codename: "SCN-01 / GULF CLOSURE",
-    posture: "crit",
-    summary:
-      "Full closure of the Strait of Hormuz. ~21M b/d of seaborne crude choked at the world's most critical gate. Immediate physical shortfall and severe price shock.",
-    brent: 148,
-    brentBaseline: BASE_BRENT,
-    sprDays: 58,
-    shortfall: 21,
-    chokepoints: [
-      { name: "Strait of Hormuz", route: "Persian Gulf", risk: 97, flow: "0.4M b/d" },
-      { name: "Strait of Malacca", route: "SE Asia", risk: 71, flow: "11.2M b/d" },
-      { name: "Suez Canal", route: "Egypt", risk: 44, flow: "8.1M b/d" },
-      { name: "Bab-el-Mandeb", route: "Red Sea", risk: 52, flow: "5.4M b/d" },
-      { name: "Turkish Straits", route: "Bosphorus", risk: 33, flow: "2.9M b/d" },
-    ],
-    refineries: [
-      { name: "Jamnagar", location: "Gujarat, IN", health: 34, crude: "Heavy sour", status: "Feedstock critical" },
-      { name: "Paradip", location: "Odisha, IN", health: 41, crude: "Medium sour", status: "Feedstock critical" },
-      { name: "Vadinar", location: "Gujarat, IN", health: 29, crude: "Heavy sour", status: "Chemistry starved" },
-      { name: "Mangalore", location: "Karnataka, IN", health: 63, crude: "Light sweet", status: "Reduced runs" },
-    ],
-    brief: [
-      { priority: "CRITICAL", action: "Execute immediate SPR drawdown", detail: "Release 1.1M b/d from strategic reserves to cover heavy-sour deficit at Jamnagar and Vadinar." },
-      { priority: "CRITICAL", action: "Reroute Gulf cargoes via Cape of Good Hope", detail: "Add 18-21 days transit. Pre-charter VLCC capacity now before rates spike further." },
-      { priority: "HIGH", action: "Activate West African sour substitution", detail: "Secure spot cargoes of comparable API/sulfur grade to keep Vadinar chemistry within tolerance." },
-      { priority: "HIGH", action: "Open diplomatic channel with Gulf producers", detail: "Prioritize overland pipeline allocation (East-West, Habshan-Fujairah) to bypass the strait." },
-    ],
+  };
+}
+
+function prettyRoute(routeName: string) {
+  return (
+    ROUTE_LABELS[routeName] ?? {
+      name: routeName.replace(/_/g, " "),
+      corridor: "Maritime corridor",
+    }
+  );
+}
+
+function priorityFromRank(
+  rank: number,
+  posture: ThreatLevel,
+): Directive["priority"] {
+  if (posture === "safe") return "MONITOR";
+  if (rank === 1) return "CRITICAL";
+  if (rank === 2) return "HIGH";
+  return "MONITOR";
+}
+
+function postureFromScenario(id: string, catalog?: ScenarioCatalogItem): ThreatLevel {
+  if (catalog) return catalog.severity;
+  if (id.includes("hormuz")) return "crit";
+  if (id.includes("bab") || id.includes("mandeb")) return "warn";
+  return "safe";
+}
+
+export function mapPayloadToScenario(
+  payload: UnifiedDashboardPayload,
+  catalog: ScenarioCatalogItem[] = SCENARIO_CATALOG,
+): Scenario {
+  const id = payload.risk_data.scenario_id as ScenarioId | string;
+  const cat = catalog.find((c) => c.id === id);
+  const posture = postureFromScenario(id, cat);
+  const m = payload.impact_data.market_metrics;
+  const trace = payload.impact_data.calculation_trace;
+
+  const chokepoints: Chokepoint[] = payload.risk_data.active_threats.map((t) => {
+    const label = prettyRoute(t.route_name);
+    return {
+      name: label.name,
+      route: label.corridor,
+      risk: Math.round(t.base_risk_score),
+      flow: `Δ ${t.risk_delta >= 0 ? "+" : ""}${t.risk_delta.toFixed(0)} risk`,
+      driver: t.primary_threat_driver,
+    };
+  });
+
+  const refineries: Refinery[] = payload.impact_data.refinery_breakdown.map((r) => {
+    const meta = REFINERY_META[r.refinery_name] ?? {
+      name: r.refinery_name.replace(/_/g, " "),
+      location: "India",
+      crude: "Slate TBD",
+    };
+    const health = Math.round(r.capacity_utilization_pct);
+    let status = "Optimal intake";
+    if (health < 45) status = "Feedstock critical";
+    else if (health < 75) status = "Reduced runs";
+    else if (r.shortfall_barrels_per_day > 0) status = "Stable";
+
+    return {
+      name: meta.name,
+      location: meta.location,
+      health,
+      crude: meta.crude,
+      status,
+      runDays: r.operating_run_days_remaining,
+      shortfallBpd: r.shortfall_barrels_per_day,
+    };
+  });
+
+  const brief: Directive[] = [...payload.orchestration_data.recommended_actions]
+    .sort((a, b) => a.priority_rank - b.priority_rank)
+    .map((a) => ({
+      priority: priorityFromRank(a.priority_rank, posture),
+      action: a.action_type,
+      detail: a.action_justification,
+      volume_mbpd: a.volume_mbpd,
+      estimated_delivery_days: a.estimated_delivery_days,
+      crude_slate_compatibility: a.crude_slate_compatibility,
+      financial_cost_multiplier: a.financial_cost_multiplier,
+      source_region: a.source_region,
+    }));
+
+  return {
+    id,
+    name: cat?.label ?? id.replace(/_/g, " "),
+    codename: cat?.codename ?? id.toUpperCase(),
+    posture,
+    summary: payload.risk_data.system_rationale || cat?.blurb || "",
+    brent: m.brent_crude_price_usd,
+    brentBaseline: trace?.brent_base_usd ?? BASE_BRENT,
+    sprDays: payload.impact_data.total_days_of_reserve_cover,
+    shortfall: payload.impact_data.affected_import_volume_mbpd,
+    freightPremium: m.freight_premium_usd_per_barrel,
+    warRiskMultiplier: m.war_risk_insurance_multiplier,
+    chokepoints,
+    refineries,
+    brief,
+    memo: payload.orchestration_data.actionable_memo,
     math: {
-      brent: "Brent = $82 baseline + shock premium. Loss of 21M b/d (~20% of seaborne supply) modeled at a 3.1x scarcity elasticity yields +$66 → $148.",
-      spr: "Net imports jump to ~5.6M b/d as domestic refiners draw reserves. Cover = stock / new import rate = 58 days.",
-      shortfall: "Hormuz throughput falls from 21.0 to 0.4M b/d. Modeled disrupted volume = 20.6M b/d, rounded to 21M b/d headline.",
+      brent: trace?.formula_brent ?? `Brent projected at $${m.brent_crude_price_usd}/bbl.`,
+      spr: trace?.formula_spr ?? `SPR cover ${payload.impact_data.total_days_of_reserve_cover} days.`,
+      shortfall:
+        trace?.formula_scarcity ??
+        `Affected import volume ${payload.impact_data.affected_import_volume_mbpd} MBPD.`,
     },
-  },
-  {
-    id: "redsea",
-    name: "Red Sea Conflict",
-    codename: "SCN-02 / BAB-EL-MANDEB",
-    posture: "warn",
-    summary:
-      "Sustained attacks force diversions around the Cape. Suez and Bab-el-Mandeb throughput collapses. Moderate shortfall, elevated freight and insurance premiums.",
-    brent: 109,
-    brentBaseline: BASE_BRENT,
-    sprDays: 74,
-    shortfall: 9,
-    chokepoints: [
-      { name: "Strait of Hormuz", route: "Persian Gulf", risk: 38, flow: "20.1M b/d" },
-      { name: "Strait of Malacca", route: "SE Asia", risk: 46, flow: "14.8M b/d" },
-      { name: "Suez Canal", route: "Egypt", risk: 84, flow: "2.6M b/d" },
-      { name: "Bab-el-Mandeb", route: "Red Sea", risk: 91, flow: "1.1M b/d" },
-      { name: "Turkish Straits", route: "Bosphorus", risk: 40, flow: "2.8M b/d" },
-    ],
-    refineries: [
-      { name: "Jamnagar", location: "Gujarat, IN", health: 71, crude: "Heavy sour", status: "Reduced runs" },
-      { name: "Paradip", location: "Odisha, IN", health: 68, crude: "Medium sour", status: "Reduced runs" },
-      { name: "Vadinar", location: "Gujarat, IN", health: 74, crude: "Heavy sour", status: "Stable" },
-      { name: "Mangalore", location: "Karnataka, IN", health: 66, crude: "Light sweet", status: "Freight strained" },
-    ],
-    brief: [
-      { priority: "HIGH", action: "Divert Europe-bound cargoes around Cape", detail: "Accept +12 day transit. Rebalance Atlantic Basin barrels to cover Suez collapse." },
-      { priority: "HIGH", action: "Hedge freight and war-risk insurance", detail: "Lock forward tanker rates; insurance premiums up 4-6x on Red Sea transits." },
-      { priority: "MONITOR", action: "Stage partial SPR readiness", detail: "Cover at 74 days remains adequate. Prepare, but do not yet execute, a contingency drawdown." },
-      { priority: "MONITOR", action: "Track escalation into Hormuz", detail: "Watch for spillover raising Gulf risk above threshold; re-run model on any Hormuz signal." },
-    ],
-    math: {
-      brent: "Brent = $82 + premium on 9M b/d rerouted supply and elevated freight. Elasticity model yields +$27 → $109.",
-      spr: "Net imports rise to ~4.3M b/d during diversion window. Cover = stock / import rate = 74 days.",
-      shortfall: "Combined Suez + Bab-el-Mandeb throughput falls ~9M b/d versus baseline during the diversion period.",
-    },
-  },
-];
+    meta: payload.meta,
+    systemRationale: payload.risk_data.system_rationale,
+    intelSnippets: (payload.risk_data.intel_snippets ?? []).slice(0, 5).map((s) => ({
+      route_name: s.route_name,
+      title: s.title,
+      source: s.source,
+    })),
+  };
+}
 
 export function threatOf(risk: number): ThreatLevel {
   if (risk >= 70) return "crit";

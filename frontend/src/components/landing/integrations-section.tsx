@@ -10,7 +10,7 @@ const integrations = [
   { name: "TankerTrackers", category: "Vessel Tracking" },
   { name: "Reuters", category: "News Signals" },
   { name: "Bloomberg", category: "Market Data" },
-  { name: "MarineTraffic", category: "AIS Feeds" },
+  { name: "newsdata.io", category: "News Intel" },
   { name: "IEA", category: "Reserve Stocks" },
   { name: "Platts", category: "Price Benchmarks" },
   { name: "NOAA", category: "Weather Risk" },
@@ -33,7 +33,7 @@ export function IntegrationsSection() {
             moves the market.
           </h2>
           <p className="text-xl text-muted-foreground">
-            Fused from the world&apos;s authoritative energy, maritime, and conflict feeds, in real time.
+            Fused from news intelligence, deterministic economics, and refinery slate matrices — built for decision speed.
           </p>
         </Reveal>
       </div>

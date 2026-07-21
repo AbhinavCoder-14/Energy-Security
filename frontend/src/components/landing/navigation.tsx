@@ -92,30 +92,18 @@ export function Navigation({ solid = false }: NavigationProps) {
           </div>
 
           <div className="hidden md:flex items-center gap-4">
-            <a
-              href="/dashboard/live"
-              className={cn(
-                "transition-all duration-500",
-                showSolid ? "text-xs" : "text-sm",
-                pathname.startsWith("/dashboard/live")
-                  ? "text-foreground font-medium"
-                  : "text-foreground/70 hover:text-foreground",
-              )}
-            >
-              Live feed
-            </a>
             <Button
               asChild
               size="sm"
               className={cn(
                 "rounded-full transition-all duration-500",
-                pathname === "/dashboard"
+                pathname.startsWith("/dashboard")
                   ? "bg-foreground text-background"
                   : "bg-foreground hover:bg-foreground/90 text-background",
                 showSolid ? "px-4 h-8 text-xs" : "px-6",
               )}
             >
-              <a href="/dashboard">War Room</a>
+              <a href="/dashboard">Open War Room</a>
             </Button>
           </div>
 
@@ -169,18 +157,10 @@ export function Navigation({ solid = false }: NavigationProps) {
           >
             <Button
               asChild
-              variant="outline"
-              className="flex-1 rounded-full h-14 text-base"
-              onClick={() => setIsMobileMenuOpen(false)}
-            >
-              <a href="/dashboard/live">Live feed</a>
-            </Button>
-            <Button
-              asChild
               className="flex-1 bg-foreground text-background rounded-full h-14 text-base"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <a href="/dashboard">War Room</a>
+              <a href="/dashboard">Open War Room</a>
             </Button>
           </div>
         </div>

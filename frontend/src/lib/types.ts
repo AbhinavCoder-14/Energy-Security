@@ -8,11 +8,19 @@ export interface RouteRisk {
   confidence_score: number;
 }
 
+export interface NewsSnippet {
+  route_name: string;
+  title: string;
+  source: string;
+  published?: string | null;
+}
+
 export interface GeopoliticalRiskPayload {
   scenario_id: string;
   timestamp: string;
   active_threats: RouteRisk[];
   system_rationale: string;
+  intel_snippets?: NewsSnippet[];
 }
 
 export interface RefineryImpact {
@@ -29,12 +37,38 @@ export interface MarketImpact {
   war_risk_insurance_multiplier: number;
 }
 
+export interface FreightRouteBreakdown {
+  route_name: string;
+  severity_ratio: number;
+  days_delta: number;
+  premium_usd_per_barrel: number;
+  disrupted_volume_mbpd: number;
+}
+
+export interface CalculationTrace {
+  brent_base_usd: number;
+  scarcity_premium_usd: number;
+  freight_premium_usd: number;
+  war_risk_premium_usd: number;
+  projected_brent_usd: number;
+  elasticity_factor: number;
+  global_supply_mbpd: number;
+  spr_total_barrels: number;
+  daily_shortfall_barrels: number;
+  days_of_reserve_cover: number;
+  freight_by_route: FreightRouteBreakdown[];
+  formula_brent: string;
+  formula_spr: string;
+  formula_scarcity: string;
+}
+
 export interface DisruptionImpactPayload {
   scenario_id: string;
   total_days_of_reserve_cover: number;
   affected_import_volume_mbpd: number;
   market_metrics: MarketImpact;
   refinery_breakdown: RefineryImpact[];
+  calculation_trace?: CalculationTrace | null;
 }
 
 export interface ProcurementAction {
@@ -53,10 +87,28 @@ export interface ExecutiveSummary {
   recommended_actions: ProcurementAction[];
 }
 
+export interface LatencyMs {
+  agent1: number;
+  agent2: number;
+  agent3: number;
+  total: number;
+}
+
+export interface PipelineMeta {
+  agent1_source: "live" | "fallback";
+  agent3_source: "live" | "mock";
+  news_ok: boolean;
+  demo_mode: boolean;
+  model?: string | null;
+  latency_ms: LatencyMs;
+  overall_confidence: number;
+}
+
 export interface UnifiedDashboardPayload {
   risk_data: GeopoliticalRiskPayload;
   impact_data: DisruptionImpactPayload;
   orchestration_data: ExecutiveSummary;
+  meta: PipelineMeta;
 }
 
 export type ScenarioId =
@@ -64,11 +116,41 @@ export type ScenarioId =
   | "strait_of_hormuz_closure"
   | "bab_el_mandeb_escalation";
 
+export type ThreatLevel = "safe" | "warn" | "crit";
+
+export interface ScenarioCatalogItem {
+  id: ScenarioId | string;
+  label: string;
+  severity: ThreatLevel;
+  blurb: string;
+  codename: string;
+}
+
 export const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
 
-export const SCENARIOS: { id: ScenarioId; label: string }[] = [
-  { id: "baseline_peace", label: "Baseline Peace" },
-  { id: "strait_of_hormuz_closure", label: "Strait of Hormuz Closure" },
-  { id: "bab_el_mandeb_escalation", label: "Bab-el-Mandeb Escalation" },
+export const SCENARIO_CATALOG: ScenarioCatalogItem[] = [
+  {
+    id: "baseline_peace",
+    label: "Baseline Peace",
+    severity: "safe",
+    blurb: "Nominal global flows. No active disruption across monitored chokepoints.",
+    codename: "SCN-00 / STEADY STATE",
+  },
+  {
+    id: "strait_of_hormuz_closure",
+    label: "Strait of Hormuz Closure",
+    severity: "crit",
+    blurb: "Acute maritime blockade of the world's most critical crude gate.",
+    codename: "SCN-01 / GULF CLOSURE",
+  },
+  {
+    id: "bab_el_mandeb_escalation",
+    label: "Bab-el-Mandeb Escalation",
+    severity: "warn",
+    blurb: "Red Sea kinetic escalation forcing Cape diversions and freight spikes.",
+    codename: "SCN-02 / BAB-EL-MANDEB",
+  },
 ];
+
+export const SCENARIOS = SCENARIO_CATALOG;

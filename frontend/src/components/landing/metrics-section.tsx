@@ -44,7 +44,7 @@ function GsapCounter({
 }
 
 const metrics = [
-  { value: 1284, suffix: "", prefix: "", label: "Tankers tracked in real time" },
+  { value: 3, suffix: "", prefix: "", label: "Demo scenarios in the War Room" },
   { value: 21, suffix: "M b/d", prefix: "", label: "Crude flow under watch" },
   { value: 94, suffix: "s", prefix: "", label: "To model a full shock" },
   { value: 63, suffix: "", prefix: "", label: "Scenarios simulated today" },

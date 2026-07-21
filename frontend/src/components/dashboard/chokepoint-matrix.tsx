@@ -50,6 +50,11 @@ export function ChokepointMatrix({ scenario }: { scenario: Scenario }) {
                     </span>
                     <span className="tnum font-mono">{c.flow}</span>
                   </p>
+                  {c.driver && (
+                    <p className="mt-1 text-[12px] leading-snug text-[var(--wr-muted)]/90">
+                      {c.driver}
+                    </p>
+                  )}
                 </div>
                 <div className="flex shrink-0 flex-col items-end gap-1">
                   <span

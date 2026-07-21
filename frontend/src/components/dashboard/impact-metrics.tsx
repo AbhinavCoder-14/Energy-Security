@@ -2,7 +2,16 @@
 
 import { useRef } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Info, TrendingUp, Timer, Droplets, ArrowUp, ArrowDown } from "lucide-react";
+import {
+  Info,
+  TrendingUp,
+  Timer,
+  Droplets,
+  ArrowUp,
+  ArrowDown,
+  Ship,
+  Shield,
+} from "lucide-react";
 import type { Scenario, ThreatLevel } from "@/lib/war-room-data";
 import { gsap, useGSAP, prefersReducedMotion } from "@/lib/gsap";
 import { SectionHeading } from "./section-heading";
@@ -61,13 +70,13 @@ function MetricCard({
           <PopoverContent
             side="top"
             align="end"
-            className="w-72 rounded-md border border-[var(--wr-border)] bg-[var(--wr-panel-2)] p-3 text-[var(--wr-text)]"
+            className="w-80 rounded-md border border-[var(--wr-border)] bg-[var(--wr-panel-2)] p-3 text-[var(--wr-text)]"
           >
             <div className="mb-1.5 flex items-center gap-2 font-mono text-[10px] tracking-widest text-[var(--wr-muted)]">
               <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: accent[tone] }} />
               AGENT 2 · DERIVATION
             </div>
-            <p className="text-[13px] leading-relaxed text-[var(--wr-muted)]">{math}</p>
+            <p className="font-mono text-[12px] leading-relaxed text-[var(--wr-muted)]">{math}</p>
           </PopoverContent>
         </Popover>
       </div>
@@ -99,10 +108,14 @@ export function ImpactMetrics({ scenario }: { scenario: Scenario }) {
   const brent = useCountUp(scenario.brent);
   const spr = useCountUp(scenario.sprDays);
   const shortfall = useCountUp(scenario.shortfall);
+  const freight = useCountUp(scenario.freightPremium ?? 0);
 
   const brentDelta = scenario.brent - scenario.brentBaseline;
-  const brentPct = Math.round((brentDelta / scenario.brentBaseline) * 100);
-  const sprDelta = scenario.sprDays - 92;
+  const brentPct =
+    scenario.brentBaseline > 0
+      ? Math.round((brentDelta / scenario.brentBaseline) * 100)
+      : 0;
+  const sprDelta = scenario.sprDays - 9.5;
 
   useGSAP(
     () => {
@@ -127,7 +140,7 @@ export function ImpactMetrics({ scenario }: { scenario: Scenario }) {
         },
       );
     },
-    { dependencies: [scenario.id], scope: sectionRef },
+    { dependencies: [scenario.id, scenario.brent], scope: sectionRef },
   );
 
   return (
@@ -135,28 +148,28 @@ export function ImpactMetrics({ scenario }: { scenario: Scenario }) {
       <SectionHeading
         index="02"
         title="Economic impact"
-        description="Modeled price shock, reserve cover, and import shortfall for the active scenario."
+        description="Modeled price shock, reserve cover, freight premium, and import shortfall from Agent 2."
       />
 
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           icon={<TrendingUp className="h-4 w-4" />}
-          label="BRENT CRUDE SHOCK"
-          display={`$${brent.toFixed(0)}`}
+          label="BRENT CRUDE"
+          display={`$${brent.toFixed(1)}`}
           unit="/ bbl"
           sub="Spot benchmark"
-          deltaText={brentDelta === 0 ? "flat" : `+$${brentDelta} · ${brentPct}%`}
+          deltaText={brentDelta === 0 ? "flat" : `+$${brentDelta.toFixed(1)} · ${brentPct}%`}
           deltaDir={brentDelta > 0 ? "up" : "flat"}
           tone={scenario.posture}
           math={scenario.math.brent}
         />
         <MetricCard
           icon={<Timer className="h-4 w-4" />}
-          label="STRATEGIC RESERVE COVER"
-          display={spr.toFixed(0)}
+          label="STRATEGIC RESERVE"
+          display={spr.toFixed(1)}
           unit="days left"
           sub="Import cover remaining"
-          deltaText={sprDelta === 0 ? "at target" : `${sprDelta} days`}
+          deltaText={sprDelta === 0 ? "at baseline" : `${sprDelta.toFixed(1)} days`}
           deltaDir={sprDelta < 0 ? "down" : "flat"}
           tone={scenario.posture}
           math={scenario.math.spr}
@@ -164,15 +177,37 @@ export function ImpactMetrics({ scenario }: { scenario: Scenario }) {
         <MetricCard
           icon={<Droplets className="h-4 w-4" />}
           label="IMPORT SHORTFALL"
-          display={shortfall.toFixed(1)}
-          unit="M b/d"
+          display={shortfall.toFixed(2)}
+          unit="MBPD"
           sub="Supply disrupted"
           deltaText={shortfall === 0 ? "none" : "disrupted"}
           deltaDir={scenario.shortfall > 0 ? "up" : "flat"}
           tone={scenario.posture}
           math={scenario.math.shortfall}
         />
+        <MetricCard
+          icon={<Ship className="h-4 w-4" />}
+          label="FREIGHT PREMIUM"
+          display={`$${freight.toFixed(2)}`}
+          unit="/ bbl"
+          sub={`War-risk ×${(scenario.warRiskMultiplier ?? 1).toFixed(2)}`}
+          deltaText={freight === 0 ? "nominal" : "elevated"}
+          deltaDir={freight > 0 ? "up" : "flat"}
+          tone={scenario.posture}
+          math={
+            scenario.math.brent.includes("freight")
+              ? scenario.math.brent
+              : `Freight premium $${(scenario.freightPremium ?? 0).toFixed(2)}/bbl; war-risk insurance multiplier ×${(scenario.warRiskMultiplier ?? 1).toFixed(2)}.`
+          }
+        />
       </div>
+
+      {(scenario.freightPremium > 0 || (scenario.warRiskMultiplier ?? 1) > 1) && (
+        <p className="mt-3 flex items-center gap-2 font-mono text-[11px] text-[var(--wr-muted)]">
+          <Shield className="h-3.5 w-3.5" aria-hidden />
+          Numbers bound to Agent 2 calculation_trace — not UI guesses.
+        </p>
+      )}
     </section>
   );
 }
