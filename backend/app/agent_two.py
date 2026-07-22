@@ -518,7 +518,21 @@ def build_map_data(
 
 def _empty_rerouting_summary() -> ReroutingSummary:
     return ReroutingSummary(
-        actionable_memo="Live telemetry steady state — no procurement shock directives.",
+        actionable_memo=(
+            "## Cabinet Situation Brief — Steady State (Live Telemetry)\n\n"
+            "No active disruption. National inbound crude paths are nominal. "
+            "Hold current procurement; continue chokepoint intelligence and live Brent telemetry.\n\n"
+            "### Authorize now\n"
+            "- Maintain routine Agent 1 news refresh and Brent spot monitoring.\n"
+            "- Keep SPR and commercial buffers on standby — no draw.\n\n"
+            "### Do not\n"
+            "- Pre-emptively release SPR or reprice freight on rumor alone.\n"
+            "- Trigger emergency tenders without a declared shock scenario.\n\n"
+            "### Official next steps\n"
+            "- Use the Scenario Control Room to run a deterministic what-if "
+            "(Hormuz / Bab-el-Mandeb / Secondary Sanctions) when Cabinet needs "
+            "shock envelopes."
+        ),
         recommended_actions=[],
     )
 

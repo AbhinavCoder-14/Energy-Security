@@ -311,9 +311,28 @@ def _fallback_rerouting(scenario_id: str, v_disrupted: float) -> ReroutingSummar
             ),
         ]
         memo = (
-            f"### REROUTING DIRECTIVE — STRAIT OF HORMUZ\n\n"
-            f"Disrupted **{v_disrupted:.3f} MBPD**. Prioritize SPR + Brazil Heavy-Sour "
-            f"for Jamnagar/Paradip chemical slate integrity."
+            f"## Cabinet Situation Brief — Strait of Hormuz Closure\n\n"
+            f"**Immediate shortfall:** {v_disrupted:.3f} MBPD of inbound crude is "
+            f"severed (Iraq full cut, UAE full cut, Saudi ~60%). "
+            f"RIL Jamnagar and IOCL Paradip face **Heavy-Sour chemical-slate risk**.\n\n"
+            f"### Authorize now\n"
+            f"1. Draw **India Domestic SPR** as a bridge (priority 1) to protect "
+            f"Jamnagar/Paradip ultra-heavy sour runs.\n"
+            f"2. Issue emergency tenders for **Brazil Santos Heavy-Sour** "
+            f"(Merey/Marlim class) as the grade-matched replacement.\n"
+            f"3. Stage **West Africa Medium-Sweet** for BPCL Kochi blend cover.\n"
+            f"4. Pre-clear Cape of Good Hope freight (+~14 transit days) and war-risk "
+            f"insurance uplift with shipping & MoP&NG.\n\n"
+            f"### Do not\n"
+            f"- Dump **US Gulf Light-Sweet** onto Jamnagar/Paradip cokers "
+            f"(slate mismatch penalty, yield collapse).\n"
+            f"- Wait for Hormuz reopening before SPR draw — runway is finite.\n"
+            f"- Allow commercial stocks to fall below the 5-day operational floor "
+            f"without Cabinet notification.\n\n"
+            f"### Official next steps\n"
+            f"- MoP&NG / PPAC: lock SPR release schedule within 24h.\n"
+            f"- IOC procurement desks: Brazil + WAF RFQs with slate clauses.\n"
+            f"- MoD / Coast Guard: elevate Hormuz / Gulf of Oman convoy advisories."
         )
     elif sid == "bab_el_mandeb_escalation":
         actions = [
@@ -340,9 +359,25 @@ def _fallback_rerouting(scenario_id: str, v_disrupted: float) -> ReroutingSummar
             ),
         ]
         memo = (
-            f"### REROUTING DIRECTIVE — BAB-EL-MANDEB\n\n"
-            f"Disrupted **{v_disrupted:.3f} MBPD**. Force Cape diversions; "
-            f"West Africa + SPR bridge."
+            f"## Cabinet Situation Brief — Bab-el-Mandeb Escalation\n\n"
+            f"**Immediate shortfall:** {v_disrupted:.3f} MBPD affected by Red Sea "
+            f"kinetic risk (Russia ~70% exposure, Saudi Red Sea leg ~40%). "
+            f"Primary response is **Cape of Good Hope diversion**, not Hormuz-style "
+            f"full Gulf blockade math.\n\n"
+            f"### Authorize now\n"
+            f"1. Re-route affected barrels via **Cape**; accept +~14 transit days "
+            f"and elevated freight.\n"
+            f"2. Prioritize **West Africa Nigeria** Medium-Sweet (Cape-capable).\n"
+            f"3. Use **US Gulf Coast** Light-Sweet only for Kochi / light blend slots.\n"
+            f"4. Soft SPR draw as freight markets settle.\n\n"
+            f"### Do not\n"
+            f"- Force Atlantic Light-Sweet onto Jamnagar heavy assets.\n"
+            f"- Keep vessels in Bab-el-Mandeb without updated war-risk cover.\n"
+            f"- Treat this as a full Hormuz closure — response envelope differs.\n\n"
+            f"### Official next steps\n"
+            f"- Shipping desks: Cape diversion standing order.\n"
+            f"- MoP&NG: temporary freight surcharge briefing to Cabinet.\n"
+            f"- Intelligence cell: daily Bab-el-Mandeb threat delta to Agent 1 feed."
         )
     elif sid == "secondary_sanctions_shock":
         actions = [
@@ -369,13 +404,37 @@ def _fallback_rerouting(scenario_id: str, v_disrupted: float) -> ReroutingSummar
             ),
         ]
         memo = (
-            f"### REROUTING DIRECTIVE — SECONDARY SANCTIONS\n\n"
-            f"Russia cut **{v_disrupted:.3f} MBPD**. Replace with WAF Medium-Sweet + "
-            f"USGC blend; avoid Light-Sweet dump onto Jamnagar."
+            f"## Cabinet Situation Brief — Secondary Sanctions Shock\n\n"
+            f"**Immediate shortfall:** Russia supply severed at "
+            f"**{v_disrupted:.3f} MBPD** (Medium-Sour / Urals-class). "
+            f"This is a **compliance + grade-substitution** shock, not a "
+            f"maritime blockade.\n\n"
+            f"### Authorize now\n"
+            f"1. Replace with **West Africa Medium-Sweet** as closest grade proxy.\n"
+            f"2. Fill residual volume with **US Gulf Light-Sweet** blended for Kochi.\n"
+            f"3. Soft SPR bridge while contracts clear compliance review.\n"
+            f"4. Legal / OFAC-equivalent clearance on every substitute cargo.\n\n"
+            f"### Do not\n"
+            f"- Dump Light-Sweet onto Jamnagar cokers as a volume dump.\n"
+            f"- Continue Russian-origin cargoes without written compliance sign-off.\n"
+            f"- Ignore slate chemistry — Medium-Sour loss is not generic barrels.\n\n"
+            f"### Official next steps\n"
+            f"- MoP&NG Legal: sanctions matrix update within 48h.\n"
+            f"- Procurement: WAF + USGC RFQs with compliance attestations.\n"
+            f"- Refinery planning: Kochi blend tables; Jamnagar hold heavy slate."
         )
     else:
         actions = []
-        memo = "No active disruption — monitoring only."
+        memo = (
+            "## Cabinet Situation Brief — Steady State\n\n"
+            "No active disruption. Maintain nominal procurement and chokepoint "
+            "monitoring. No SPR draw, no emergency tenders, no Cape diversion "
+            "standing orders.\n\n"
+            "### Authorize now\n"
+            "- Continue routine intelligence refresh (Agent 1) and live Brent telemetry.\n\n"
+            "### Do not\n"
+            "- Pre-emptively release SPR or reprice freight on rumor alone."
+        )
 
     return ReroutingSummary(actionable_memo=memo, recommended_actions=actions)
 
@@ -473,7 +532,11 @@ def generate_rerouting_strategy(
             "recommended_actions (array of objects with: origin_name, "
             "origin_coordinates [lat,lng], volume_mbpd, transit_days, "
             "freight_usd_per_bbl, crude_grade, slate_compatibility, "
-            "priority_rank, justification)."
+            "priority_rank, justification). "
+            "actionable_memo MUST be Cabinet-ready markdown with sections: "
+            "## Cabinet Situation Brief, ### Authorize now, ### Do not, "
+            "### Official next steps. Be specific about grade chemistry, "
+            "SPR draw, freight detours, and which refineries are protected."
         )
         user_prompt = (
             f"SCENARIO: {sid}\nLIVE_BRENT: {live_brent}\n\n"
