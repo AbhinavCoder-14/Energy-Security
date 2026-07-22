@@ -161,7 +161,12 @@ export function DevelopersSection() {
                 Read the docs
               </a>
               <span className="text-foreground/20">|</span>
-              <a href="#" className="text-muted-foreground hover:text-foreground">
+              <a
+                href="https://github.com/AbhinavCoder-14/Energy-Security"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted-foreground hover:text-foreground"
+              >
                 View on GitHub
               </a>
             </div>

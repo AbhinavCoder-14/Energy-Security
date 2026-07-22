@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aegis Energy CORE — Pitch Deck</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #090C10;
+    --surface: #121721;
+    --surface-2: #171C26;
+    --line: rgba(255,255,255,0.08);
+    --line-strong: rgba(255,255,255,0.14);
+    --gold: #C9A46A;
+    --gold-bright: #E4C48A;
+    --gold-dim: #8A7348;
+    --ink: #F4F1EA;
+    --ink-soft: #A8AEB8;
+    --ink-faint: #6E7582;
+    --danger: #C45A42;
+    --danger-soft: rgba(196,90,66,0.12);
+    --ok: #5BA88A;
+    --accent: #60A5FA;
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    height: 100%;
+    background: #05070A;
+    color: var(--ink);
+    font-family: "Instrument Sans", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+  h1, h2, h3, .serif { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; }
+  .mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
+
+  .progress-bar {
+    position: fixed; top: 0; left: 0; height: 2px; width: 10%;
+    background: linear-gradient(90deg, var(--gold-dim), var(--gold-bright));
+    z-index: 1000; transition: width .35s ease;
+  }
+
+  .slide-deck {
+    position: relative;
+    width: 100vw; height: 100vh;
+    overflow: hidden;
+  }
+  @media (min-width: 769px) {
+    .slide-deck {
+      max-width: calc(100vh * 16 / 9);
+      max-height: calc(100vw * 9 / 16);
+      margin: auto;
+      position: absolute;
+      inset: 0;
+      border: 1px solid var(--line);
+      background: var(--bg);
+      box-shadow: 0 0 0 1px rgba(0,0,0,.4), 0 40px 120px rgba(0,0,0,.55);
+    }
+  }
+
+  .slide {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    padding: clamp(28px, 4.2vh, 48px) clamp(32px, 5vw, 64px) clamp(64px, 9vh, 88px);
+    opacity: 0; visibility: hidden;
+    transition: opacity .4s ease, visibility .4s;
+    background: var(--bg);
+    overflow: hidden;
+  }
+  .slide.active { opacity: 1; visibility: visible; z-index: 2; }
+
+  .slide-content {
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+    justify-content: center;
+    gap: clamp(12px, 2vh, 22px);
+    min-height: 0;
+  }
+
+  .slide-meta {
+    position: absolute; top: 22px; right: clamp(32px, 5vw, 64px);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--ink-faint); z-index: 5;
+  }
+  .slide-meta .num b { color: var(--gold); font-weight: 600; }
+
+  .eyebrow {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--gold); margin-bottom: 6px;
+  }
+  .title-lg {
+    font-size: clamp(28px, 3.6vw, 46px);
+    line-height: 1.08; color: var(--ink); letter-spacing: -0.01em;
+  }
+  .title-md {
+    font-size: clamp(24px, 2.8vw, 36px);
+    line-height: 1.12; color: var(--ink);
+  }
+  .lede {
+    font-size: clamp(14px, 1.25vw, 17px);
+    line-height: 1.55; color: var(--ink-soft); max-width: 640px;
+  }
+
+  .card {
+    background: linear-gradient(155deg, rgba(18,23,33,.95), rgba(23,28,38,.98));
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    backdrop-filter: blur(12px);
+  }
+  .tag {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 7px 14px; border: 1px solid var(--line-strong);
+    border-radius: 999px; font-size: 11px; color: var(--ink-soft);
+    font-family: "JetBrains Mono", monospace; letter-spacing: .02em;
+  }
+  .tag .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--gold); }
+
+  .shot {
+    width: 100%; height: 100%; object-fit: cover; object-position: top center;
+    display: block; border-radius: calc(var(--radius) - 2px);
+  }
+  .shot-frame {
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: #0e1218;
+    box-shadow: 0 20px 50px rgba(0,0,0,.35);
+  }
+
+  /* ---- Slide 1 Title ---- */
+  #s1 {
+    padding: 0;
+    justify-content: flex-end;
+  }
+  #s1 .hero-bg {
+    position: absolute; inset: 0; z-index: 0;
+  }
+  #s1 .hero-bg img {
+    width: 100%; height: 100%; object-fit: cover; object-position: top;
+    filter: grayscale(25%) brightness(.42) contrast(1.05);
+  }
+  #s1 .hero-shade {
+    position: absolute; inset: 0; z-index: 1;
+    background:
+      radial-gradient(ellipse 55% 50% at 18% 20%, rgba(9,12,16,.2), rgba(9,12,16,.88) 70%),
+      linear-gradient(180deg, rgba(9,12,16,.45) 0%, rgba(9,12,16,.55) 45%, rgba(9,12,16,.97) 90%);
+  }
+  #s1 .slide-content {
+    position: relative; z-index: 2;
+    padding: clamp(28px, 4vh, 48px) clamp(32px, 5vw, 64px) clamp(56px, 8vh, 80px);
+    justify-content: flex-end; align-items: flex-start;
+  }
+  #s1 .mark {
+    font-family: "JetBrains Mono", monospace; font-size: 11px; letter-spacing: .28em;
+    color: var(--gold); text-transform: uppercase; margin-bottom: 18px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  #s1 .mark .ln { width: 28px; height: 1px; background: var(--gold-dim); }
+  #s1 h1 {
+    font-size: clamp(52px, 8vw, 108px); line-height: .92; letter-spacing: -0.02em;
+  }
+  #s1 h1 em { font-style: normal; color: var(--gold); }
+  #s1 .sub {
+    margin-top: 18px; font-family: "JetBrains Mono", monospace; font-size: 12px;
+    letter-spacing: .06em; color: var(--ink-soft); text-transform: uppercase; line-height: 1.7;
+    max-width: 560px;
+  }
+  #s1 .chiprow { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 28px; }
+
+  /* ---- Slide 2 stats ---- */
+  .s2grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: clamp(24px, 3vw, 48px); align-items: center; }
+  .stat-stack { display: flex; flex-direction: column; gap: 14px; }
+  .stat {
+    display: flex; align-items: baseline; gap: 18px;
+    padding-bottom: 14px; border-bottom: 1px solid var(--line);
+  }
+  .stat:last-child { border-bottom: none; }
+  .stat .num {
+    font-family: "Instrument Serif", serif;
+    font-size: clamp(36px, 4vw, 52px); color: var(--gold-bright); line-height: 1;
+    font-variant-numeric: tabular-nums; white-space: nowrap;
+  }
+  .stat .lbl { font-size: 13px; color: var(--ink-soft); line-height: 1.5; }
+  .chart-wrap {
+    height: clamp(200px, 32vh, 280px);
+    padding: 18px 18px 10px;
+  }
+  .costbox {
+    margin-top: 8px; padding: 14px 18px; display: flex; align-items: center; gap: 14px;
+  }
+  .costbox .icon { color: var(--danger); font-family: "Instrument Serif", serif; font-size: 26px; }
+  .costbox p { font-size: 13px; color: var(--ink-soft); line-height: 1.55; }
+  .costbox b { color: var(--ink); }
+
+  /* ---- Slide 3 problem ---- */
+  .s3grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 8px; }
+  .probcol { padding: 22px 20px; }
+  .probcol.bad { border-color: rgba(196,90,66,.35); background: linear-gradient(155deg, rgba(30,18,16,.9), var(--surface)); }
+  .probcol.good { border-color: rgba(201,164,106,.28); }
+  .probcol h3 {
+    margin: 0 0 14px; font-size: 20px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .probcol.bad h3 { color: #D98A72; }
+  .probcol.good h3 { color: var(--gold-bright); }
+  .probitem {
+    display: flex; gap: 10px; padding: 10px 0;
+    border-top: 1px solid var(--line); font-size: 13px; color: var(--ink-soft); line-height: 1.5;
+  }
+  .probitem:first-of-type { border-top: none; }
+  .probitem .mk { flex: none; font-family: "JetBrains Mono", monospace; font-size: 12px; }
+  .probcol.bad .mk { color: var(--danger); }
+  .probcol.good .mk { color: var(--gold); }
+
+  /* ---- Slide 4 agents ---- */
+  .agentflow {
+    display: grid; grid-template-columns: 1fr auto 1fr auto 1fr;
+    align-items: stretch; gap: 0; margin-top: 8px;
+  }
+  .agentcard { padding: 22px 18px; display: flex; flex-direction: column; gap: 10px; }
+  .agentcard .idx {
+    font-family: "JetBrains Mono", monospace; color: var(--gold-dim);
+    font-size: 11px; letter-spacing: .12em;
+  }
+  .agentcard h4 { font-size: 20px; color: var(--ink); }
+  .agentcard p { font-size: 13px; color: var(--ink-soft); line-height: 1.55; }
+  .arrowcol {
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 8px; color: var(--gold-dim); font-size: 20px;
+  }
+
+  /* ---- Slide 5 code ---- */
+  .s5grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 24px; align-items: stretch; }
+  .codecard { overflow: hidden; }
+  .codecard .bar {
+    display: flex; gap: 6px; padding: 12px 16px; border-bottom: 1px solid var(--line);
+  }
+  .codecard .bar span { width: 8px; height: 8px; border-radius: 50%; background: #3a3f4a; }
+  .codecard pre {
+    margin: 0; padding: 18px; font-family: "JetBrains Mono", monospace;
+    font-size: 12px; line-height: 1.75; color: #CFD3DA; overflow: auto;
+  }
+  .codecard .k { color: var(--gold-bright); }
+  .codecard .s { color: #8FB3C9; }
+  .codecard .c { color: var(--ink-faint); }
+  .riskcard { padding: 18px; display: flex; flex-direction: column; gap: 8px; }
+  .riskcard .thumb { height: 140px; margin-bottom: 8px; }
+  .riskrow {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 9px 0; border-top: 1px solid var(--line); font-size: 13px;
+  }
+  .riskrow:first-of-type { border-top: none; }
+  .riskrow .v { font-family: "JetBrains Mono", monospace; color: var(--gold-bright); font-size: 12px; }
+
+  /* ---- Slide 6 math ---- */
+  .eqcard { padding: clamp(22px, 3vh, 36px) clamp(22px, 3vw, 40px); text-align: center; }
+  .eqcard .eq {
+    font-family: "Instrument Serif", serif; font-style: italic;
+    font-size: clamp(22px, 2.8vw, 34px); color: var(--gold-bright);
+  }
+  .eqcard .eq sub { font-size: .55em; }
+  .breakdown { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 22px; }
+  .bditem { padding: 16px; text-align: left; }
+  .bditem .lbl {
+    font-family: "JetBrains Mono", monospace; font-size: 10px;
+    color: var(--gold-dim); letter-spacing: .08em; text-transform: uppercase;
+  }
+  .bditem .val {
+    font-family: "Instrument Serif", serif; font-size: 26px; color: var(--ink); margin-top: 6px;
+  }
+  .traceline {
+    margin-top: 18px; display: flex; align-items: center; gap: 12px;
+    font-size: 12.5px; color: var(--ink-soft); text-align: left;
+  }
+
+  /* ---- Slide 7 refiners ---- */
+  .refgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .refcard { overflow: hidden; display: flex; flex-direction: column; }
+  .refcard .body { padding: 16px 16px 18px; flex: 1; display: flex; flex-direction: column; gap: 8px; }
+  .refcard h4 { font-size: 20px; }
+  .refcard .co {
+    font-family: "JetBrains Mono", monospace; font-size: 10px;
+    color: var(--gold-dim); letter-spacing: .1em; text-transform: uppercase;
+  }
+  .refcard .req { font-size: 12px; color: var(--ink-faint); }
+  .refcard .req b { color: var(--ink-soft); font-weight: 500; }
+  .refcard .action {
+    margin-top: auto; padding-top: 10px; border-top: 1px solid var(--line);
+    font-size: 12.5px; color: var(--gold-bright); line-height: 1.45;
+  }
+  .iconplate {
+    height: 110px; display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(155deg, #171B25, #1C212C);
+  }
+
+  /* ---- Slide 8 product ---- */
+  .ui-grid { display: grid; grid-template-columns: 1.2fr .8fr; gap: 18px; align-items: stretch; height: min(52vh, 420px); }
+  .ui-stack { display: grid; grid-template-rows: 1fr 1fr; gap: 12px; min-height: 0; }
+  .ui-stack .shot-frame, .ui-grid > .shot-frame { min-height: 0; height: 100%; }
+  .scenpills { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 2px; }
+  .scenpill {
+    padding: 7px 14px; border-radius: 999px;
+    font-family: "JetBrains Mono", monospace; font-size: 10.5px; letter-spacing: .04em;
+    border: 1px solid var(--line-strong); color: var(--ink-soft);
+  }
+  .scenpill.on { background: var(--gold); color: #1B1508; border-color: var(--gold); font-weight: 600; }
+
+  /* ---- Slide 9 impact ---- */
+  .impactgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .impactcard { padding: 24px 20px; }
+  .impactcard .n {
+    font-family: "Instrument Serif", serif; font-size: clamp(32px, 3.5vw, 42px);
+    color: var(--gold-bright); line-height: 1;
+  }
+  .impactcard h4 { margin: 14px 0 8px; font-size: 16px; font-family: "Instrument Sans", sans-serif; font-weight: 600; }
+  .impactcard p { font-size: 13px; color: var(--ink-soft); line-height: 1.55; }
+
+  /* ---- Slide 10 roadmap ---- */
+  .timeline { position: relative; margin-top: 10px; }
+  .timeline .track {
+    position: absolute; top: 12px; left: 0; right: 0; height: 1px; background: var(--line-strong);
+  }
+  .tlgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; position: relative; }
+  .tlnode { position: relative; padding-top: 28px; }
+  .tlnode .dotmark {
+    position: absolute; top: 6px; left: 0; width: 12px; height: 12px;
+    border-radius: 50%; background: var(--bg); border: 2px solid var(--gold);
+  }
+  .tlnode.active .dotmark { background: var(--gold); }
+  .tlnode .ph {
+    font-family: "JetBrains Mono", monospace; font-size: 10px;
+    letter-spacing: .12em; color: var(--gold-dim); text-transform: uppercase;
+  }
+  .tlnode h4 { margin: 8px 0 8px; font-size: 18px; }
+  .tlnode p { font-size: 13px; color: var(--ink-soft); line-height: 1.55; }
+  .closing {
+    margin-top: auto; display: flex; justify-content: space-between; align-items: flex-end;
+    flex-wrap: wrap; gap: 16px; padding-top: 22px; border-top: 1px solid var(--line);
+  }
+  .closing .brandmark { font-family: "Instrument Serif", serif; font-size: 24px; color: var(--gold); }
+  .closing .q { max-width: 420px; font-size: 13px; color: var(--ink-faint); line-height: 1.55; }
+  .cta-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+  .cta {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 18px; border-radius: 999px; text-decoration: none;
+    font-size: 13px; font-weight: 600; transition: .2s ease;
+  }
+  .cta.primary { background: var(--ink); color: var(--bg); }
+  .cta.primary:hover { background: var(--gold-bright); }
+  .cta.ghost { border: 1px solid var(--line-strong); color: var(--ink-soft); }
+  .cta.ghost:hover { border-color: var(--gold); color: var(--ink); }
+
+  .nav-controls {
+    position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 16px; z-index: 1000;
+    padding: 8px 14px; border-radius: 999px;
+    background: rgba(18,23,33,.85); border: 1px solid var(--line);
+    backdrop-filter: blur(10px);
+  }
+  .nav-btn {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(255,255,255,.06); border: 1px solid var(--line);
+    color: var(--ink); cursor: pointer; font-size: 16px;
+  }
+  .nav-btn:hover { background: rgba(201,164,106,.15); border-color: var(--gold-dim); }
+  .slide-counter {
+    font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--ink-faint);
+    min-width: 52px; text-align: center;
+  }
+  .slide-counter b { color: var(--gold); font-weight: 600; }
+
+  .hint {
+    position: fixed; bottom: 28px; right: 28px; z-index: 900;
+    font-family: "JetBrains Mono", monospace; font-size: 10px;
+    letter-spacing: .08em; color: var(--ink-faint); text-transform: uppercase;
+  }
+
+  @media (max-width: 860px) {
+    .s2grid, .s3grid, .s5grid, .agentflow, .refgrid, .impactgrid, .tlgrid, .ui-grid, .breakdown {
+      grid-template-columns: 1fr !important;
+    }
+    .arrowcol { transform: rotate(90deg); padding: 8px 0; }
+    .ui-grid { height: auto; }
+    .hint { display: none; }
+    body { overflow: auto; }
+    .slide-deck { max-width: none; max-height: none; position: relative; height: auto; min-height: 100vh; }
+    .slide {
+      position: relative; opacity: 1; visibility: visible;
+      min-height: 100vh; height: auto; padding-bottom: 100px;
+    }
+    .slide:not(.active) { display: none; }
+    .nav-controls { bottom: 12px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .slide { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"></div>
+
+<div class="slide-deck" id="deck">
+
+  <!-- 01 TITLE -->
+  <section class="slide active" id="s1" data-slide="1">
+    <div class="hero-bg">
+      <img src="screenshots-command-center.png" alt="Aegis Energy Command Center">
+    </div>
+    <div class="hero-shade"></div>
+    <div class="slide-content">
+      <div class="mark"><span class="ln"></span>India Energy Security Command Center</div>
+      <h1>AEGIS<br><em>ENERGY</em> CORE</h1>
+      <div class="sub">Autonomous geopolitical shock simulation<br>&amp; crude slate procurement core</div>
+      <div class="chiprow">
+        <span class="tag"><span class="dot"></span>3-Agent Autonomous Pipeline</span>
+        <span class="tag"><span class="dot"></span>Built for IOCL · BPCL · HPCL · RIL</span>
+        <span class="tag"><span class="dot"></span>Import-Dependent Economies</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 MACRO -->
+  <section class="slide" id="s2" data-slide="2">
+    <div class="slide-meta"><span class="num">02 <b>/</b> 10</span></div>
+    <div class="slide-content">
+      <div>
+        <p class="eyebrow">The Macro Vulnerability</p>
+        <h2 class="title-md">The 88% Exposure — India's Energy Vulnerability</h2>
+      </div>
+      <div class="s2grid">
+        <div class="stat-stack">
+          <div class="stat"><span class="num">88%</span><span class="lbl">of India's crude requirement is imported — over half transits vulnerable West Asian maritime gates.</span></div>
+          <div class="stat"><span class="num">9.5d</span><span class="lbl">underground strategic reserve cover (ISPRL). Commercial buffers help — still below the 90-day IEA benchmark.</span></div>
+          <div class="stat"><span class="num">45%</span><span class="lbl">of national crude imports transit through the Strait of Hormuz alone.</span></div>
+        </div>
+        <div class="card chart-wrap">
+          <canvas id="importChart" aria-label="Import dependency breakdown"></canvas>
+        </div>
+      </div>
+      <div class="costbox card">
+        <div class="icon">$</div>
+        <p>Cost of inaction — every <b>$10/bbl</b> crude surge widens India's Current Account Deficit by ~<b>$9 billion</b>.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 PROBLEM -->
+  <section class="slide" id="s3" data-slide="3">
+    <div class="slide-meta"><span class="num">03 <b>/</b> 10</span></div>
+    <div class="slide-content">
+      <div>
+        <p class="eyebrow">The Problem</p>
+        <h2 class="title-md">Why Current Supply Chain Tools Fail During Crises</h2>
+        <p class="lede">Procurement teams are still fighting the last war — reacting to spot-price surges and insurance spikes that have already happened.</p>
+      </div>
+      <div class="s3grid">
+        <div class="probcol bad card">
+          <h3>Legacy Procurement Tools</h3>
+          <div class="probitem"><span class="mk">✕</span><span><b>Reactive, not anticipatory</b> — teams respond only after spot prices surge and tanker insurance premiums spike.</span></div>
+          <div class="probitem"><span class="mk">✕</span><span><b>Unfiltered news noise</b> — scrapers misattribute unrelated headlines to maritime shipping risk.</span></div>
+          <div class="probitem"><span class="mk">✕</span><span><b>Chemical-blind</b> — ERP alternatives ignore the receiving refinery's chemical slate.</span></div>
+        </div>
+        <div class="probcol good card">
+          <h3>Aegis Energy System</h3>
+          <div class="probitem"><span class="mk">◆</span><span><b>Anticipatory by design</b> — deterministic impact engine models shocks before they clear the spot market.</span></div>
+          <div class="probitem"><span class="mk">◆</span><span><b>Boolean-filtered ingestion</b> — structured risk scoring isolates genuine maritime and geopolitical signal.</span></div>
+          <div class="probitem"><span class="mk">◆</span><span><b>Slate-aware routing</b> — every recommendation matched to the refinery's actual chemical slate.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 ARCHITECTURE -->
+  <section class="slide" id="s4" data-slide="4">
+    <div class="slide-meta"><span class="num">04 <b>/</b> 10</span></div>
+    <div class="slide-content">
+      <div>
+        <p class="eyebrow">The Solution</p>
+        <h2 class="title-md">Aegis Energy Architecture</h2>
+        <p class="lede">Three purpose-built agents, each solving one failure mode of legacy procurement — chained into a single autonomous pipeline.</p>
+      </div>
+      <div class="agentflow">
+        <div class="agentcard card">
+          <span class="idx">AGENT 01</span>
+          <h4>Threat Parser</h4>
+          <p>Extracts structured geopolitical and maritime risk scores (0–100) from noise-filtered news feeds via OpenRouter LLM.</p>
+        </div>
+        <div class="arrowcol">→</div>
+        <div class="agentcard card">
+          <span class="idx">AGENT 02</span>
+          <h4>Deterministic Impact Engine</h4>
+          <p>Non-LLM economic equations for price shocks, freight premiums, SPR depletion — with auditable LaTeX traces.</p>
+        </div>
+        <div class="arrowcol">→</div>
+        <div class="agentcard card">
+          <span class="idx">AGENT 03</span>
+          <h4>Procurement Orchestrator</h4>
+          <p>Generates actionable, chemical-slate-matched procurement memos for specific Indian refineries.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 05 AGENT 1 -->
+  <section class="slide" id="s5" data-slide="5">
+    <div class="slide-meta"><span class="num">05 <b>/</b> 10</span></div>
+    <div class="slide-content">
+      <div>
+        <p class="eyebrow">Agent 1 — Real-Time Threat Ingestion</p>
+        <h2 class="title-md">Noise-Filtered Geopolitical Parsing</h2>
+      </div>
+      <div class="s5grid">
+        <div class="codecard card">
+          <div class="bar"><span></span><span></span><span></span></div>
+          <pre><span class="c">// boolean target query</span>
+<span class="k">query</span>: <span class="s">"Strait of Hormuz"</span> AND (<span class="s">"tanker"</span> OR <span class="s">"blockade"</span>)
+
+<span class="c">// structured risk schema (pydantic)</span>
+{
+  <span class="k">"chokepoint"</span>: <span class="s">"Strait of Hormuz"</span>,
+  <span class="k">"risk_delta"</span>: <span class="k">+45</span>,
+  <span class="k">"scenario"</span>: <span class="s">"Gulf Closure"</span>,
+  <span class="k">"confidence"</span>: <span class="k">0.91</span>,
+  <span class="k">"baseline_isolated"</span>: <span class="k">true</span>
+}</pre>
+        </div>
+        <div class="riskcard card">
+          <div class="shot-frame thumb">
+            <img class="shot" src="screenshots-map.png" alt="Supply map chokepoints">
+          </div>
+          <div class="riskrow"><span>Chokepoint</span><span class="v">Strait of Hormuz</span></div>
+          <div class="riskrow"><span>Risk Delta</span><span class="v">Δ +45</span></div>
+          <div class="riskrow"><span>Query Method</span><span class="v">Boolean, target-locked</span></div>
+          <div class="riskrow"><span>State Isolation</span><span class="v">Baseline Peace unaffected</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 06 AGENT 2 -->
+  <section class="slide" id="s6" data-slide="6">
+    <div class="slide-meta"><span class="num">06 <b>/</b> 10</span></div>
+    <div class="slide-content">
+      <div>
+        <p class="eyebrow">Agent 2 — Mathematical Rigor</p>
+        <h2 class="title-md">Deterministic Impact Modeling — No Hallucinations</h2>
+      </div>
+      <div class="eqcard card">
+        <div class="eq">ΔP<sub>total</sub> &nbsp;=&nbsp; ΔP<sub>scarcity</sub> &nbsp;+&nbsp; ΔP<sub>freight</sub> &nbsp;+&nbsp; ΔP<sub>insurance</sub></div>
+        <div class="breakdown">
+          <div class="bditem card"><div class="lbl">Scarcity Shock</div><div class="val">+ $4.10</div></div>
+          <div class="bditem card"><div class="lbl">Freight Premium</div><div class="val">+ $2.35</div></div>
+          <div class="bditem card"><div class="lbl">War-Risk Insurance</div><div class="val">+ $1.80</div></div>
+        </div>
+        <div class="traceline">
+          <span class="mono" style="color:var(--gold)">Audit trail:</span>
+          <span>Every War Room metric opens an Explain modal — KaTeX equations + substitution steps from <span class="mono">calculation_trace</span>.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 07 AGENT 3 -->
+  <section class="slide" id="s7" data-slide="7">
+    <div class="slide-meta"><span class="num">07 <b>/</b> 10</span></div>
+    <div class="slide-content">
+      <div>
+        <p class="eyebrow">Agent 3 — Slate-Compatible Procurement</p>
+        <h2 class="title-md">Chemical Slate &amp; Refinery Matching</h2>
+      </div>
+      <div class="refgrid">
+        <div class="refcard card">
+          <div class="iconplate">
+            <svg viewBox="0 0 48 48" width="48" height="48" fill="none" stroke="var(--gold)" stroke-width="1.4"><rect x="6" y="20" width="8" height="18"/><rect x="18" y="12" width="8" height="26"/><rect x="30" y="16" width="8" height="22"/><line x1="4" y1="38" x2="44" y2="38"/></svg>
+          </div>
+          <div class="body">
+            <span class="co">Reliance Industries</span>
+            <h4>Jamnagar</h4>
+            <p class="req">Requires <b>Ultra-Heavy / Heavy Sour</b></p>
+            <div class="action">→ Latin America Heavy Spot Diversion</div>
+          </div>
+        </div>
+        <div class="refcard card">
+          <div class="iconplate">
+            <svg viewBox="0 0 48 48" width="48" height="48" fill="none" stroke="var(--gold)" stroke-width="1.4"><rect x="6" y="20" width="8" height="18"/><rect x="18" y="12" width="8" height="26"/><rect x="30" y="16" width="8" height="22"/><line x1="4" y1="38" x2="44" y2="38"/></svg>
+          </div>
+          <div class="body">
+            <span class="co">Indian Oil Corporation</span>
+            <h4>Paradip</h4>
+            <p class="req">Requires <b>Heavy Sour</b></p>
+            <div class="action">→ Immediate High-Sour SPR Drawdown</div>
+          </div>
+        </div>
+        <div class="refcard card">
+          <div class="iconplate">
+            <svg viewBox="0 0 48 48" width="48" height="48" fill="none" stroke="var(--gold)" stroke-width="1.4"><rect x="6" y="20" width="8" height="18"/><rect x="18" y="12" width="8" height="26"/><rect x="30" y="16" width="8" height="22"/><line x1="4" y1="38" x2="44" y2="38"/></svg>
+          </div>
+          <div class="body">
+            <span class="co">Bharat Petroleum</span>
+            <h4>Kochi</h4>
+            <p class="req">Requires <b>Light Sweet</b></p>
+            <div class="action">→ US Permian Sweet Cargo Re-routing</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 08 PRODUCT UI -->
+  <section class="slide" id="s8" data-slide="8">
+    <div class="slide-meta"><span class="num">08 <b>/</b> 10</span></div>
+    <div class="slide-content">
+      <div>
+        <p class="eyebrow">Interactive UI &amp; Auditability</p>
+        <h2 class="title-md">Live Product Walkthrough</h2>
+        <div class="scenpills">
+          <span class="scenpill">Baseline Peace</span>
+          <span class="scenpill on">Gulf Closure</span>
+          <span class="scenpill">Bab-el-Mandeb</span>
+          <span class="scenpill">Sanctions Shock</span>
+        </div>
+      </div>
+      <div class="ui-grid">
+        <div class="shot-frame">
+          <img class="shot" src="screenshots-command-center.png" alt="Command Center scenario control">
+        </div>
+        <div class="ui-stack">
+          <div class="shot-frame">
+            <img class="shot" src="screenshots-projections.png" alt="Reserve and Brent projections">
+          </div>
+          <div class="shot-frame">
+            <img class="shot" src="screenshots-structural-exposure.png" alt="Structural exposure panel">
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 09 IMPACT -->
+  <section class="slide" id="s9" data-slide="9">
+    <div class="slide-meta"><span class="num">09 <b>/</b> 10</span></div>
+    <div class="slide-content">
+      <div>
+        <p class="eyebrow">Economic &amp; Strategic Impact</p>
+        <h2 class="title-md">Quantifiable National Security ROI</h2>
+      </div>
+      <div class="impactgrid">
+        <div class="impactcard card">
+          <div class="n">12–24h</div>
+          <h4>Lead-time advantage</h4>
+          <p>Procurement teams gain a decisive window before spot-market price shocks fully settle.</p>
+        </div>
+        <div class="impactcard card">
+          <div class="n">9.5d</div>
+          <h4>SPR caverns protected</h4>
+          <p>Optimized commercial blending prevents premature drawdown of India's underground strategic reserves.</p>
+        </div>
+        <div class="impactcard card">
+          <div class="n">↓ tariffs</div>
+          <h4>Minimized war-risk premiums</h4>
+          <p>Cargoes are dynamically re-routed to avoid inflated maritime insurance during active scenarios.</p>
+        </div>
+      </div>
+      <div class="shot-frame" style="height: clamp(120px, 22vh, 180px); margin-top: 4px;">
+        <img class="shot" src="screenshots-map.png" alt="War Room supply map" style="object-position: center;">
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 ROADMAP -->
+  <section class="slide" id="s10" data-slide="10">
+    <div class="slide-meta"><span class="num">10 <b>/</b> 10</span></div>
+    <div class="slide-content">
+      <div>
+        <p class="eyebrow">Future Roadmap &amp; Integration</p>
+        <h2 class="title-md">Production Deployment &amp; Scalability</h2>
+      </div>
+      <div class="timeline">
+        <div class="track"></div>
+        <div class="tlgrid">
+          <div class="tlnode active">
+            <span class="dotmark"></span>
+            <span class="ph">Phase 1 — Current</span>
+            <h4>Decision Core Live</h4>
+            <p>Live Brent + news ingestion, full 3-agent core, War Room on Vercel, API on Render.</p>
+          </div>
+          <div class="tlnode">
+            <span class="dotmark"></span>
+            <span class="ph">Phase 2</span>
+            <h4>ERP &amp; Fleet Integration</h4>
+            <p>Direct hooks into OMC SAP / Oracle ERPs and AIS live vessel-tracking satellite data.</p>
+          </div>
+          <div class="tlnode">
+            <span class="dotmark"></span>
+            <span class="ph">Phase 3</span>
+            <h4>LNG / LPG Expansion</h4>
+            <p>Extend coverage to liquefied natural gas and LPG supply-chain chokepoints.</p>
+          </div>
+        </div>
+      </div>
+      <div class="closing">
+        <div>
+          <div class="brandmark">AEGIS ENERGY CORE</div>
+          <div class="cta-row">
+            <a class="cta primary" href="/dashboard">Open War Room →</a>
+            <a class="cta ghost" href="/">Landing</a>
+          </div>
+        </div>
+        <div class="q">Autonomous geopolitical shock simulation &amp; crude slate procurement — built for India's import-dependent energy sector.</div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<div class="nav-controls">
+  <button class="nav-btn" type="button" onclick="prevSlide()" aria-label="Previous slide">←</button>
+  <span class="slide-counter"><b id="current">1</b> / <span id="total">10</span></span>
+  <button class="nav-btn" type="button" onclick="nextSlide()" aria-label="Next slide">→</button>
+</div>
+<div class="hint">← → keys · Space</div>
+
+<script>
+  let current = 1;
+  const slides = Array.from(document.querySelectorAll(".slide"));
+  const total = slides.length;
+  document.getElementById("total").textContent = total;
+
+  let importChart = null;
+
+  function ensureChart() {
+    if (importChart || typeof Chart === "undefined") return;
+    const ctx = document.getElementById("importChart");
+    if (!ctx) return;
+    importChart = new Chart(ctx, {
+      type: "doughnut",
+      data: {
+        labels: ["Iraq 20%", "Russia 18%", "Saudi 16%", "UAE 11%", "Others 35%"],
+        datasets: [{
+          data: [20, 18, 16, 11, 35],
+          backgroundColor: ["#C45A42", "#8A7348", "#C9A46A", "#E4C48A", "#2C4A63"],
+          borderColor: "#090C10",
+          borderWidth: 2,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: "right",
+            labels: {
+              color: "#A8AEB8",
+              font: { family: "JetBrains Mono", size: 10 },
+              boxWidth: 10,
+            },
+          },
+          title: {
+            display: true,
+            text: "Sovereign import mix",
+            color: "#C9A46A",
+            font: { family: "JetBrains Mono", size: 11, weight: "500" },
+          },
+        },
+        cutout: "62%",
+      },
+    });
+  }
+
+  function showSlide(n) {
+    if (n < 1) n = 1;
+    if (n > total) n = total;
+    current = n;
+    slides.forEach((s, i) => s.classList.toggle("active", i === n - 1));
+    document.getElementById("current").textContent = n;
+    document.getElementById("progressBar").style.width = (n / total * 100) + "%";
+    if (n === 2) ensureChart();
+    history.replaceState(null, "", "#" + slides[n - 1].id);
+  }
+
+  function nextSlide() { showSlide(current + 1); }
+  function prevSlide() { showSlide(current - 1); }
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") {
+      e.preventDefault(); nextSlide();
+    }
+    if (e.key === "ArrowLeft" || e.key === "PageUp") {
+      e.preventDefault(); prevSlide();
+    }
+    if (e.key === "Home") { e.preventDefault(); showSlide(1); }
+    if (e.key === "End") { e.preventDefault(); showSlide(total); }
+  });
+
+  let touchX = null;
+  document.addEventListener("touchstart", (e) => { touchX = e.changedTouches[0].screenX; }, { passive: true });
+  document.addEventListener("touchend", (e) => {
+    if (touchX == null) return;
+    const dx = e.changedTouches[0].screenX - touchX;
+    if (Math.abs(dx) > 50) { dx < 0 ? nextSlide() : prevSlide(); }
+    touchX = null;
+  }, { passive: true });
+
+  const hash = location.hash.replace("#", "");
+  const start = slides.findIndex((s) => s.id === hash);
+  showSlide(start >= 0 ? start + 1 : 1);
+</script>
+</body>
+</html>

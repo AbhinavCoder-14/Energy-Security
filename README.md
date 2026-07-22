@@ -28,6 +28,8 @@ India energy-security command center. Live situational awareness, deterministic 
 
 ![Sovereign import dependency with severed grades](frontend/public/screenshots-structural-exposure.png)
 
+**Pitch deck (HTML):** open [`frontend/public/pitch-deck.html`](frontend/public/pitch-deck.html) locally, or visit `/pitch-deck.html` when the frontend is running.
+
 ---
 
 ## What it does

@@ -32,7 +32,7 @@ const footerLinkGroups = {
 
 const socialLinks = [
   { name: "Twitter", href: "#" },
-  { name: "GitHub", href: "#" },
+  { name: "GitHub", href: "https://github.com/AbhinavCoder-14/Energy-Security" },
   { name: "LinkedIn", href: "#" },
 ];
 
