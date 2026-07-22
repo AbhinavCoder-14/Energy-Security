@@ -160,7 +160,7 @@ export function HeroSection() {
         </div>
       </div>
 
-      <div data-hero className="absolute bottom-24 left-0 right-0">
+      <div data-hero className="absolute bottom-1 left-0 right-0">
         <div className="flex gap-16 marquee whitespace-nowrap">
           {[...Array(2)].map((_, i) => (
             <div key={i} className="flex gap-16">
