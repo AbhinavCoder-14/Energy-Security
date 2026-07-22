@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: aegis-energy-api
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /api/health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: APP_MODE
+        value: SIMULATION
+      - key: AEGIS_SSL_VERIFY
+        value: "0"
+      - key: LLM_MODEL
+        value: google/gemini-2.5-flash
+      - key: INDIA_ISPRL_CAPACITY_MB
+        value: "39.0"
+      - key: INDIA_COMMERCIAL_BUFFER_MB
+        value: "322.5"
+      - key: INDIA_TOTAL_DAILY_IMPORT_MBPD
+        value: "5.0"
+      - key: GLOBAL_DAILY_OIL_SUPPLY_MBPD
+        value: "102.5"
+      # Set these as secrets in the Render dashboard (or Blueprint sync: false prompts)
+      - key: OPEN_ROUTER_API
+        sync: false
+      - key: NEWSDATA_API_KEY
+        sync: false
+      - key: OILPRICE_API_KEY
+        sync: false
