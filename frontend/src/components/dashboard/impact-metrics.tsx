@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef } from "react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Info,
   TrendingUp,
@@ -9,10 +8,10 @@ import {
   Droplets,
   ArrowUp,
   ArrowDown,
-  Ship,
   Shield,
 } from "lucide-react";
 import type { Scenario, ThreatLevel } from "@/lib/war-room-data";
+import type { AuditTopic } from "@/components/AuditModal";
 import { gsap, useGSAP, prefersReducedMotion } from "@/lib/gsap";
 import { SectionHeading } from "./section-heading";
 import { useCountUp } from "./use-count-up";
@@ -32,7 +31,8 @@ function MetricCard({
   deltaText,
   deltaDir,
   tone,
-  math,
+  badge,
+  onAudit,
 }: {
   icon: React.ReactNode;
   label: string;
@@ -42,44 +42,37 @@ function MetricCard({
   deltaText: string;
   deltaDir: "up" | "down" | "flat";
   tone: ThreatLevel;
-  math: string;
+  badge?: string;
+  onAudit: () => void;
 }) {
   return (
     <div
       data-metric-card
-      className="wr-scanline relative overflow-hidden rounded-md border border-[var(--wr-border)] bg-[var(--wr-panel)] p-5"
+      className="wr-scanline relative overflow-hidden rounded-2xl border border-[var(--wr-border)] bg-[var(--wr-panel)] p-5 transition-all duration-200 hover:border-slate-700"
     >
       <div className="absolute inset-x-0 top-0 h-0.5" style={{ backgroundColor: accent[tone] }} />
       <div className="relative z-10 flex items-start justify-between">
-        <span className="flex items-center gap-2 font-mono text-[11px] tracking-wider text-[var(--wr-muted)]">
+        <span className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-[var(--wr-muted)]">
           <span style={{ color: accent[tone] }}>{icon}</span>
           {label}
         </span>
 
-        <Popover>
-          <PopoverTrigger asChild>
-            <button
-              type="button"
-              className="flex items-center gap-1 rounded-sm border border-[var(--wr-border)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--wr-muted)] transition-colors hover:border-[var(--wr-accent)] hover:text-[var(--wr-text)]"
-              aria-label={`Explain the math behind ${label}`}
-            >
-              <Info className="h-3 w-3" />
-              EXPLAIN
-            </button>
-          </PopoverTrigger>
-          <PopoverContent
-            side="top"
-            align="end"
-            className="w-80 rounded-md border border-[var(--wr-border)] bg-[var(--wr-panel-2)] p-3 text-[var(--wr-text)]"
-          >
-            <div className="mb-1.5 flex items-center gap-2 font-mono text-[10px] tracking-widest text-[var(--wr-muted)]">
-              <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: accent[tone] }} />
-              AGENT 2 · DERIVATION
-            </div>
-            <p className="font-mono text-[12px] leading-relaxed text-[var(--wr-muted)]">{math}</p>
-          </PopoverContent>
-        </Popover>
+        <button
+          type="button"
+          onClick={onAudit}
+          className="flex items-center gap-1 rounded-lg border border-[var(--wr-border)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--wr-muted)] transition-colors hover:border-[var(--wr-accent)] hover:text-[var(--wr-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--wr-accent)]"
+          aria-label={`Audit the math behind ${label}`}
+        >
+          <Info className="h-3 w-3" />
+          AUDIT
+        </button>
       </div>
+
+      {badge && (
+        <span className="relative z-10 mt-2 inline-flex rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 font-mono text-[10px] text-emerald-400">
+          {badge}
+        </span>
+      )}
 
       <div className="relative z-10 mt-4 flex items-baseline gap-1.5">
         <span className="font-mono text-4xl font-semibold tabular-nums tracking-tight lg:text-5xl">
@@ -103,19 +96,28 @@ function MetricCard({
   );
 }
 
-export function ImpactMetrics({ scenario }: { scenario: Scenario }) {
+export function ImpactMetrics({
+  scenario,
+  onAudit,
+}: {
+  scenario: Scenario;
+  onAudit: (topic: AuditTopic) => void;
+}) {
   const sectionRef = useRef<HTMLElement>(null);
-  const brent = useCountUp(scenario.brent);
+  const liveSpot = scenario.liveBrentSpot ?? scenario.brentBaseline;
+  const simulated = scenario.brent;
+  const brentSpot = useCountUp(liveSpot);
+  const brentSim = useCountUp(simulated);
   const spr = useCountUp(scenario.sprDays);
+  const commercial = useCountUp(scenario.commercialDays ?? scenario.sprDays);
   const shortfall = useCountUp(scenario.shortfall);
-  const freight = useCountUp(scenario.freightPremium ?? 0);
+  const freightWar = useCountUp(
+    (scenario.freightPremium ?? 0) + (scenario.warRiskPremium ?? 0),
+  );
 
-  const brentDelta = scenario.brent - scenario.brentBaseline;
+  const brentDelta = simulated - liveSpot;
   const brentPct =
-    scenario.brentBaseline > 0
-      ? Math.round((brentDelta / scenario.brentBaseline) * 100)
-      : 0;
-  const sprDelta = scenario.sprDays - 9.5;
+    liveSpot > 0 ? Math.round((brentDelta / liveSpot) * 100) : 0;
 
   useGSAP(
     () => {
@@ -143,69 +145,70 @@ export function ImpactMetrics({ scenario }: { scenario: Scenario }) {
     { dependencies: [scenario.id, scenario.brent], scope: sectionRef },
   );
 
+  const liveBadge = scenario.brentDataSource
+    ? `LIVE API: $${liveSpot.toFixed(2)} · ${scenario.brentDataSource}`
+    : undefined;
+
   return (
     <section ref={sectionRef} aria-label="Economic impact">
       <SectionHeading
         index="02"
         title="Economic impact"
-        description="Modeled price shock, reserve cover, freight premium, and import shortfall from Agent 2."
+        description="Live Brent spot vs simulated shock, reserve cover split, import shortfall, and freight/war premium."
       />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           icon={<TrendingUp className="h-4 w-4" />}
-          label="BRENT CRUDE"
-          display={`$${brent.toFixed(1)}`}
+          label="Brent Crude"
+          display={`$${brentSim.toFixed(1)}`}
           unit="/ bbl"
-          sub="Spot benchmark"
+          sub={`Spot $${brentSpot.toFixed(1)} → simulated shock`}
           deltaText={brentDelta === 0 ? "flat" : `+$${brentDelta.toFixed(1)} · ${brentPct}%`}
           deltaDir={brentDelta > 0 ? "up" : "flat"}
           tone={scenario.posture}
-          math={scenario.math.brent}
+          badge={liveBadge}
+          onAudit={() => onAudit("brent")}
         />
         <MetricCard
           icon={<Timer className="h-4 w-4" />}
-          label="STRATEGIC RESERVE"
+          label="Reserve Cover"
           display={spr.toFixed(1)}
-          unit="days left"
-          sub="Import cover remaining"
-          deltaText={sprDelta === 0 ? "at baseline" : `${sprDelta.toFixed(1)} days`}
-          deltaDir={sprDelta < 0 ? "down" : "flat"}
+          unit="SPR days"
+          sub={`Commercial buffer ${commercial.toFixed(1)} days`}
+          deltaText={`${spr.toFixed(1)} / ${commercial.toFixed(1)} d`}
+          deltaDir="flat"
           tone={scenario.posture}
-          math={scenario.math.spr}
+          onAudit={() => onAudit("spr")}
         />
         <MetricCard
           icon={<Droplets className="h-4 w-4" />}
-          label="IMPORT SHORTFALL"
-          display={shortfall.toFixed(2)}
+          label="Import Shortfall"
+          display={shortfall.toFixed(3)}
           unit="MBPD"
-          sub="Supply disrupted"
+          sub="V_disrupted refinery exposure"
           deltaText={shortfall === 0 ? "none" : "disrupted"}
           deltaDir={scenario.shortfall > 0 ? "up" : "flat"}
           tone={scenario.posture}
-          math={scenario.math.shortfall}
+          onAudit={() => onAudit("volume")}
         />
         <MetricCard
-          icon={<Ship className="h-4 w-4" />}
-          label="FREIGHT PREMIUM"
-          display={`$${freight.toFixed(2)}`}
+          icon={<Shield className="h-4 w-4" />}
+          label="Freight & War Risk"
+          display={`$${freightWar.toFixed(2)}`}
           unit="/ bbl"
-          sub={`War-risk ×${(scenario.warRiskMultiplier ?? 1).toFixed(2)}`}
-          deltaText={freight === 0 ? "nominal" : "elevated"}
-          deltaDir={freight > 0 ? "up" : "flat"}
+          sub={`Freight $${(scenario.freightPremium ?? 0).toFixed(2)} + War $${(scenario.warRiskPremium ?? 0).toFixed(2)}`}
+          deltaText={freightWar === 0 ? "nominal" : "elevated"}
+          deltaDir={freightWar > 0 ? "up" : "flat"}
           tone={scenario.posture}
-          math={
-            scenario.math.brent.includes("freight")
-              ? scenario.math.brent
-              : `Freight premium $${(scenario.freightPremium ?? 0).toFixed(2)}/bbl; war-risk insurance multiplier ×${(scenario.warRiskMultiplier ?? 1).toFixed(2)}.`
-          }
+          onAudit={() => onAudit("freight")}
         />
       </div>
 
-      {(scenario.freightPremium > 0 || (scenario.warRiskMultiplier ?? 1) > 1) && (
+      {scenario.calculationTrace && (
         <p className="mt-3 flex items-center gap-2 font-mono text-[11px] text-[var(--wr-muted)]">
           <Shield className="h-3.5 w-3.5" aria-hidden />
-          Numbers bound to Agent 2 calculation_trace — not UI guesses.
+          Numbers bound to Agent 2 calculation_trace — click AUDIT on any card for KaTeX derivation.
         </p>
       )}
     </section>

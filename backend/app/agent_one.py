@@ -1,7 +1,7 @@
 """
 Agent 1 — Geopolitical Risk Parser.
-Live-first: newsdata.io + OpenRouter LLM (parallel per route).
-Falls back to scenarios.json on failure / demo mode.
+LIVE: news_ingest + OpenRouter LLM → RouteRisk JSON parse.
+SIMULATION: scenarios.json fallback.
 """
 
 from __future__ import annotations
@@ -18,8 +18,9 @@ from openai import OpenAI
 
 from app.config import (
     AGENT1_LLM_TIMEOUT_S,
+    LLM_MODEL,
     OPENROUTER_BASE_URL,
-    OPENROUTER_MODEL,
+    resolve_app_mode,
 )
 from app.http_utils import make_httpx_client, with_retries
 from app.news_engine import fetch_live_chokepoint_news
@@ -50,7 +51,7 @@ def _get_client() -> Optional[OpenAI]:
         api_key=OPENROUTER_API_KEY,
         default_headers={
             "HTTP-Referer": "http://localhost:3000",
-            "X-Title": "Aegis Energy Security MVP",
+            "X-Title": "Aegis Energy Security",
         },
         http_client=make_httpx_client(timeout=AGENT1_LLM_TIMEOUT_S + 4.0),
     )
@@ -63,10 +64,17 @@ def _load_fallback(scenario_id: str) -> GeopoliticalRiskPayload:
     return GeopoliticalRiskPayload(**fallback_data)
 
 
+def _chokepoint_status(score: float) -> str:
+    if score >= 81:
+        return "Critical Blockade"
+    if score >= 51:
+        return "Elevated"
+    return "Clear"
+
+
 def _score_route(
     route: str, scenario_id: str, client: OpenAI
 ) -> tuple[Optional[RouteRisk], List[NewsSnippet], bool]:
-    """Score a single route. Returns (risk|None, snippets, news_ok)."""
     live_text, snippets = fetch_live_chokepoint_news(route)
     news_ok = bool(live_text)
     if not live_text:
@@ -79,18 +87,20 @@ def _score_route(
         "- 21-50: Increased verbal tension or drills\n"
         "- 51-80: Kinetic actions, drone strikes, active shipping diversions\n"
         "- 81-100: Total blockade, declare war zone, regular asset damage\n"
-        "Output absolute JSON with keys exactly matching: "
-        "route_name, base_risk_score, risk_delta, primary_threat_driver, confidence_score.\n"
+        "Output absolute JSON with keys: route_name, base_risk_score, risk_delta, "
+        "primary_threat_driver, confidence_score, risk_score, chokepoint_status, threat_drivers.\n"
+        "chokepoint_status must be one of: Clear, Elevated, Critical Blockade.\n"
+        "threat_drivers must be an array of 1-3 concise strings.\n"
         f"Set route_name to exactly '{route}'."
     )
     scenario_hint = (
-        f"Scenario context for this simulation run: '{scenario_id}'. "
-        "Weight your scores accordingly if the live news is mixed or quiet."
+        f"Scenario context: '{scenario_id}'. "
+        "Weight scores if live news is mixed or quiet."
     )
 
     completion = with_retries(
         lambda: client.chat.completions.create(
-            model=OPENROUTER_MODEL,
+            model=LLM_MODEL,
             response_format={"type": "json_object"},
             messages=[
                 {"role": "system", "content": system_prompt},
@@ -108,9 +118,13 @@ def _score_route(
         label=f"agent1:{route}",
     )
 
-    parsed_json = json.loads(completion.choices[0].message.content)
+    parsed_json = json.loads(completion.choices[0].message.content or "{}")
     parsed_json["route_name"] = route
-    return RouteRisk(**parsed_json), snippets, news_ok
+    risk = RouteRisk(**parsed_json)
+    risk.risk_score = risk.base_risk_score
+    if not risk.chokepoint_status or risk.chokepoint_status == "Clear":
+        risk.chokepoint_status = _chokepoint_status(risk.base_risk_score)  # type: ignore[assignment]
+    return risk, snippets, news_ok
 
 
 def analyze_route_risk_with_ml(
@@ -118,10 +132,11 @@ def analyze_route_risk_with_ml(
 ) -> AgentOneResult:
     """
     Parse news into structured threat scores.
-    force_mock / missing keys → scenarios.json fallback.
-    Partial per-route success is allowed; full fallback only if zero routes scored.
+    force_mock / SIMULATION → scenarios.json fallback.
+    LIVE: no silent fallback unless all routes fail.
     """
-    if force_mock:
+    app_mode = resolve_app_mode()
+    if force_mock or app_mode == "SIMULATION":
         payload = _load_fallback(scenario_id)
         return AgentOneResult(payload=payload, source="fallback", news_ok=False)
 
@@ -156,9 +171,8 @@ def analyze_route_risk_with_ml(
                     print(f"[Agent 1] Route {route} failed: {route_err}")
 
         if not active_threats:
-            raise ValueError("No routes scored successfully.")
+            raise ValueError("No routes scored successfully in LIVE mode.")
 
-        # Preserve stable route order
         order = {r: i for i, r in enumerate(TARGET_ROUTES)}
         active_threats.sort(key=lambda t: order.get(t.route_name, 99))
 
@@ -166,7 +180,7 @@ def analyze_route_risk_with_ml(
             scenario_id=scenario_id,
             timestamp=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
             active_threats=active_threats,
-            system_rationale="Live telemetry parsed dynamically via OpenRouter AI engine.",
+            system_rationale="Live telemetry parsed via OpenRouter LLM.",
             intel_snippets=all_snippets[:8],
         )
         return AgentOneResult(
@@ -174,10 +188,9 @@ def analyze_route_risk_with_ml(
         )
 
     except Exception as e:
-        print(
-            f"[Demo Safety Active] Live Agent 1 pipeline bypassed or failed: {e}. "
-            "Defaulting to safe mock payload."
-        )
+        if resolve_app_mode() == "LIVE":
+            raise RuntimeError(f"Agent 1 LIVE pipeline failed: {e}") from e
+        print(f"[Agent 1] LIVE failed, SIMULATION fallback: {e}")
         return AgentOneResult(
             payload=_load_fallback(scenario_id),
             source="fallback",

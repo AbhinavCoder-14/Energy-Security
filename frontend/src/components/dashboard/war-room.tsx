@@ -14,11 +14,13 @@ import { ChokepointMatrix } from "./chokepoint-matrix";
 import { RefineryHealth } from "./refinery-health";
 import { ExecutiveBrief } from "./executive-brief";
 import { SectionHeading } from "./section-heading";
+import { AuditModal, type AuditTopic } from "@/components/AuditModal";
 import { Arc } from "@/components/ui/arc";
 
 const STAGE_LABELS: Record<string, string> = {
   ingest: "Ingesting intelligence",
   risk: "Agent 1 — risk parse",
+  market: "Fetching live Brent quote",
   impact: "Agent 2 — impact math",
   orchestration: "Agent 3 — procurement",
   done: "Pipeline complete",
@@ -31,6 +33,7 @@ export function WarRoom() {
   const [active, setActive] = useState<Scenario | null>(null);
   const [meta, setMeta] = useState<PipelineMeta | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [auditTopic, setAuditTopic] = useState<AuditTopic>(null);
   const abortRef = useRef<AbortController | null>(null);
   const rootRef = useRef<HTMLElement>(null);
 
@@ -45,7 +48,7 @@ export function WarRoom() {
     try {
       const payload = await simulateStream(id as ScenarioId, {
         signal: ac.signal,
-        mock: process.env.NEXT_PUBLIC_FORCE_MOCK === "1" ? true : undefined,
+        mock: process.env.NEXT_PUBLIC_FORCE_MOCK === "1" ? true : false,
         onProgress: (p) => setPipelineStage(p.stage),
       });
       const mapped = mapPayloadToScenario(payload, SCENARIO_CATALOG);
@@ -113,9 +116,9 @@ export function WarRoom() {
   );
 
   const sourceBadge =
-    meta?.demo_mode || meta?.agent1_source === "fallback"
-      ? { label: "DEMO SAFETY NET", tone: "var(--wr-warn)" }
-      : { label: "LIVE TELEMETRY", tone: "var(--wr-safe)" };
+    meta?.app_mode === "LIVE" && meta?.agent1_source === "live"
+      ? { label: "LIVE TELEMETRY", tone: "var(--wr-safe)" }
+      : { label: "DEMO SAFETY NET", tone: "var(--wr-warn)" };
 
   const initialLoading = !active && !error;
 
@@ -210,7 +213,7 @@ export function WarRoom() {
             {active && (
               <>
                 <div data-wr-reveal>
-                  <ImpactMetrics scenario={active} />
+                  <ImpactMetrics scenario={active} onAudit={setAuditTopic} />
                 </div>
 
                 <section aria-label="Tactical brief">
@@ -263,6 +266,12 @@ export function WarRoom() {
       </main>
 
       <FooterSection />
+
+      <AuditModal
+        topic={auditTopic}
+        trace={active?.calculationTrace}
+        onClose={() => setAuditTopic(null)}
+      />
     </div>
   );
 }

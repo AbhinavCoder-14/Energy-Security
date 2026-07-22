@@ -2,11 +2,11 @@
 
 India energy-security command center. Unidirectional 3-agent pipeline:
 
-1. **Agent 1** — live newsdata.io + OpenRouter LLM → `GeopoliticalRiskPayload` (fallback: `scenarios.json`)
-2. **Agent 2** — deterministic scarcity / freight / war-risk / SPR math + `calculation_trace` → `DisruptionImpactPayload`
-3. **Agent 3** — OpenRouter procurement memo + ranked actions → `ExecutiveSummary` (scenario-aware matrix mock fallback)
+1. **Agent 1** — live news ingest + OpenRouter LLM → `RouteRisk` parse (fallback: `scenarios.json` in SIMULATION)
+2. **Agent 2** — live Brent (`P_live`) + refinery exposure formulas + `calculation_trace` (LaTeX audit)
+3. **Agent 3** — OpenRouter LLM procurement memo + ranked actions (scenario-aware matrix mock fallback)
 
-Frontend: Next.js War Room at `/dashboard` bound to the FastAPI simulate API (SSE progress + provenance badges).
+Frontend: Next.js War Room at `/dashboard` — 4-card metrics ribbon, LIVE Brent badge, KaTeX audit modal.
 
 ---
 
@@ -39,34 +39,43 @@ You should see `backend/`, `frontend/`, and this `README.md` at the project root
 
 ### 2. Create `.env` in the project root
 
-Create `Energy-Security/.env` (same folder as `backend/` and `frontend/`):
+Copy the template and fill in keys:
 
-```env
-OPEN_ROUTER_API=sk-or-v1-your-openrouter-key-here
-NEWSAPI_KEY=pub_your-newsdata-key-here
+```powershell
+copy .env.example .env
 ```
 
-- **OpenRouter:** https://openrouter.ai
-- **newsdata.io:** https://newsdata.io (key usually starts with `pub_`)
-
-Share keys privately with teammates — **never commit `.env` to GitHub**.
-
-**Optional (recommended for first run / hackathon / corporate laptops):**
+**LIVE production** (requires valid keys):
 
 ```env
-AEGIS_DEMO_MODE=1
+APP_MODE=LIVE
+PORT=8000
+ENVIRONMENT=production
+
+OPEN_ROUTER_API=sk-or-v1-...
+LLM_MODEL=google/gemini-2.5-flash
+
+NEWSDATA_API_KEY=pub_...          # newsdata.io
+# OR NEWSAPI_ORG_KEY=...          # newsapi.org
+
+OILPRICE_API_KEY=...              # optional; yfinance BZ=F fallback if missing
+
+INDIA_ISPRL_CAPACITY_MB=39.0
+INDIA_COMMERCIAL_BUFFER_MB=322.5
+INDIA_TOTAL_DAILY_IMPORT_MBPD=5.0
+GLOBAL_DAILY_OIL_SUPPLY_MBPD=102.5
+
+AEGIS_SSL_VERIFY=0                # corp laptop SSL
+```
+
+**SIMULATION / hackathon demo** (no live APIs required):
+
+```env
+APP_MODE=SIMULATION
 AEGIS_SSL_VERIFY=0
 ```
 
-- `AEGIS_DEMO_MODE=1` — works without live APIs (uses `scenarios.json`)
-- `AEGIS_SSL_VERIFY=0` — fixes SSL certificate errors on some corporate networks
-
-**Minimum demo (no API keys):** only put this in `.env`:
-
-```env
-AEGIS_DEMO_MODE=1
-AEGIS_SSL_VERIFY=0
-```
+Legacy: `AEGIS_DEMO_MODE=1` maps to `APP_MODE=SIMULATION`.
 
 ### 3. Backend — Terminal 1 (port 8000)
 
@@ -84,7 +93,6 @@ python -m venv venv
 # Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 
 pip install -r requirements.txt
-pip install python-dotenv
 
 $env:PYTHONPATH = "."
 python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
@@ -93,7 +101,29 @@ python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 **Verify backend:**
 
 - API docs: http://127.0.0.1:8000/docs
-- Health check: http://127.0.0.1:8000/api/health → should return `"status": "ok"`
+- Health check: http://127.0.0.1:8000/api/health → `"app_mode"`, `"brent_status"`, `"openrouter_configured"`
+
+**Verify LIVE path:**
+
+```powershell
+# With APP_MODE=LIVE and keys set:
+curl http://127.0.0.1:8000/api/health
+curl http://127.0.0.1:8000/api/simulate/baseline_peace
+# brent_source should NOT be a hardcoded fallback; meta.brent_data_source present
+```
+
+**Verify SIMULATION path:**
+
+```powershell
+# APP_MODE=SIMULATION — sub-second scenarios.json path:
+curl "http://127.0.0.1:8000/api/simulate/strait_of_hormuz_closure?mock=true"
+```
+
+**Run Agent 2 unit test (no APIs):**
+
+```powershell
+python tests/test_agent_two.py
+```
 
 ### 4. Frontend — Terminal 2 (port 3000)
 
@@ -113,11 +143,11 @@ The War Room calls `http://localhost:8000` by default. Both terminals must stay 
 
 | Badge | Meaning |
 |-------|---------|
-| **LIVE TELEMETRY** | Live news + OpenRouter succeeded |
-| **DEMO SAFETY NET** | Fallback mode — data still shows, but not fully live |
-| **A1 fallback · A3 mock** | Agent 1/3 used cached or mock paths |
+| **LIVE TELEMETRY** | `APP_MODE=LIVE` — live Brent + OpenRouter agents succeeded |
+| **DEMO SAFETY NET** | `APP_MODE=SIMULATION` or fallback paths |
+| **LIVE API: $P_live · source** | Brent card badge from `calculation_trace` / market service |
 
-`A1 fallback` / `A3 mock` with **DEMO SAFETY NET** is normal when `.env` keys are missing, APIs fail, or `AEGIS_DEMO_MODE=1` is set.
+Click **AUDIT** on any metric card for KaTeX equations + substitution steps from `calculation_trace`.
 
 ### Setup checklist
 
@@ -159,10 +189,10 @@ Open http://localhost:3000/dashboard
 
 | Endpoint | Purpose |
 |----------|---------|
-| `GET /api/health` | Status, demo mode, key presence, model |
+| `GET /api/health` | `app_mode`, Brent status, OpenRouter/news/oilprice configured |
 | `GET /api/scenarios` | Catalog with labels / severity / blurbs |
-| `GET /api/simulate/{id}` | Full pipeline (`?mock=true` forces demo path) |
-| `GET /api/simulate/{id}/stream` | SSE: ingest → risk → impact → orchestration → done |
+| `GET /api/simulate/{id}` | Full pipeline (`?mock=true` forces SIMULATION path) |
+| `GET /api/simulate/{id}/stream` | SSE: ingest → risk → market → impact → orchestration → done |
 
 **Scenario IDs:** `baseline_peace` · `strait_of_hormuz_closure` · `bab_el_mandeb_escalation`
 
@@ -170,16 +200,21 @@ Open http://localhost:3000/dashboard
 
 ## Environment variables
 
-Create `.env` in the **project root** (not inside `backend/`).
+Create `.env` in the **project root** (not inside `backend/`). See `.env.example` for the full contract.
 
 | Variable | Purpose |
 |----------|---------|
+| `APP_MODE` | `LIVE` or `SIMULATION` (default `SIMULATION`) |
 | `OPEN_ROUTER_API` | OpenRouter API key (also accepts `OPENROUTER_API_KEY`) |
-| `NEWSAPI_KEY` | newsdata.io `pub_…` key (also accepts `NEWSDATA_API_KEY`) |
-| `AEGIS_DEMO_MODE` | `1` / `true` — skip live APIs; use `scenarios.json` + matrix mock |
+| `LLM_MODEL` | OpenRouter model slug (default `google/gemini-2.5-flash`) |
+| `NEWSDATA_API_KEY` / `NEWSAPI_KEY` | newsdata.io key |
+| `NEWSAPI_ORG_KEY` | newsapi.org alternative |
+| `OILPRICE_API_KEY` | OilPriceAPI Brent (optional; yfinance fallback) |
+| `INDIA_ISPRL_CAPACITY_MB` | SPR capacity in millions of barrels (default `39.0`) |
+| `INDIA_COMMERCIAL_BUFFER_MB` | Commercial buffer MB (default `322.5`) |
+| `GLOBAL_DAILY_OIL_SUPPLY_MBPD` | Global supply benchmark (default `102.5`) |
+| `AEGIS_DEMO_MODE` | Legacy: `1` maps to `APP_MODE=SIMULATION` |
 | `AEGIS_SSL_VERIFY` | `1` to enforce TLS cert checks (default `0` for corp SSL) |
-| `AEGIS_API_MAX_RETRIES` | Retries for 429/5xx/network (default `3`) |
-| `AEGIS_API_RETRY_BASE_S` | Base backoff seconds (default `1.0`) |
 | `NEXT_PUBLIC_API_BASE` | Frontend API origin (default `http://localhost:8000`) |
 | `NEXT_PUBLIC_FORCE_MOCK` | `1` — UI always passes `?mock=true` |
 
@@ -217,13 +252,15 @@ AEGIS_SSL_VERIFY=0
 
 Restart the backend.
 
-### OpenRouter 402 (insufficient credits)
+### OpenRouter errors / missing key
 
-Add credits at openrouter.ai, or use demo mode:
+Use SIMULATION mode for demos:
 
 ```env
-AEGIS_DEMO_MODE=1
+APP_MODE=SIMULATION
 ```
+
+Or add a valid `OPEN_ROUTER_API` key for LIVE mode.
 
 ### Port 8000 already in use
 

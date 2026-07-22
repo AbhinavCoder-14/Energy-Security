@@ -1,4 +1,5 @@
 import type {
+  CalculationTrace,
   PipelineMeta,
   ScenarioCatalogItem,
   ScenarioId,
@@ -46,9 +47,13 @@ export type Scenario = {
   summary: string;
   brent: number;
   brentBaseline: number;
+  liveBrentSpot?: number;
+  brentDataSource?: string;
   sprDays: number;
+  commercialDays?: number;
   shortfall: number;
   freightPremium: number;
+  warRiskPremium?: number;
   warRiskMultiplier: number;
   chokepoints: Chokepoint[];
   refineries: Refinery[];
@@ -59,6 +64,7 @@ export type Scenario = {
     spr: string;
     shortfall: string;
   };
+  calculationTrace?: CalculationTrace | null;
   meta?: PipelineMeta;
   systemRationale?: string;
   intelSnippets?: { route_name: string; title: string; source: string }[];
@@ -195,10 +201,14 @@ export function mapPayloadToScenario(
     posture,
     summary: payload.risk_data.system_rationale || cat?.blurb || "",
     brent: m.brent_crude_price_usd,
-    brentBaseline: trace?.brent_base_usd ?? BASE_BRENT,
-    sprDays: payload.impact_data.total_days_of_reserve_cover,
+    brentBaseline: trace?.live_brent_usd ?? trace?.brent_base_usd ?? m.live_brent_spot_usd ?? BASE_BRENT,
+    liveBrentSpot: m.live_brent_spot_usd ?? trace?.live_brent_usd ?? undefined,
+    brentDataSource: m.data_source ?? trace?.brent_data_source ?? payload.meta.brent_data_source ?? undefined,
+    sprDays: payload.impact_data.spr_days_of_cover ?? trace?.spr_days ?? payload.impact_data.total_days_of_reserve_cover,
+    commercialDays: payload.impact_data.commercial_days_of_cover ?? trace?.commercial_days ?? undefined,
     shortfall: payload.impact_data.affected_import_volume_mbpd,
     freightPremium: m.freight_premium_usd_per_barrel,
+    warRiskPremium: m.war_risk_premium_usd ?? trace?.war_risk_premium_usd ?? undefined,
     warRiskMultiplier: m.war_risk_insurance_multiplier,
     chokepoints,
     refineries,
@@ -211,6 +221,7 @@ export function mapPayloadToScenario(
         trace?.formula_scarcity ??
         `Affected import volume ${payload.impact_data.affected_import_volume_mbpd} MBPD.`,
     },
+    calculationTrace: trace ?? null,
     meta: payload.meta,
     systemRationale: payload.risk_data.system_rationale,
     intelSnippets: (payload.risk_data.intel_snippets ?? []).slice(0, 5).map((s) => ({

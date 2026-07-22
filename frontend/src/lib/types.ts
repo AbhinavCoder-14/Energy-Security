@@ -6,6 +6,9 @@ export interface RouteRisk {
   risk_delta: number;
   primary_threat_driver: string;
   confidence_score: number;
+  risk_score?: number;
+  chokepoint_status?: "Clear" | "Elevated" | "Critical Blockade";
+  threat_drivers?: string[];
 }
 
 export interface NewsSnippet {
@@ -35,6 +38,11 @@ export interface MarketImpact {
   price_increase_pct: number;
   freight_premium_usd_per_barrel: number;
   war_risk_insurance_multiplier: number;
+  live_brent_spot_usd?: number | null;
+  simulated_brent_usd?: number | null;
+  brent_delta_usd?: number | null;
+  data_source?: string | null;
+  war_risk_premium_usd?: number | null;
 }
 
 export interface FreightRouteBreakdown {
@@ -47,6 +55,9 @@ export interface FreightRouteBreakdown {
 
 export interface CalculationTrace {
   brent_base_usd: number;
+  live_brent_usd?: number | null;
+  brent_data_source?: string | null;
+  brent_timestamp?: string | null;
   scarcity_premium_usd: number;
   freight_premium_usd: number;
   war_risk_premium_usd: number;
@@ -54,17 +65,27 @@ export interface CalculationTrace {
   elasticity_factor: number;
   global_supply_mbpd: number;
   spr_total_barrels: number;
+  spr_capacity_mb?: number;
+  commercial_buffer_mb?: number;
+  v_disrupted_mbpd?: number;
+  max_risk_score?: number;
+  spr_days?: number;
+  commercial_days?: number;
   daily_shortfall_barrels: number;
   days_of_reserve_cover: number;
   freight_by_route: FreightRouteBreakdown[];
   formula_brent: string;
   formula_spr: string;
   formula_scarcity: string;
+  latex_formulas?: Record<string, string>;
+  substitution_steps?: string[];
 }
 
 export interface DisruptionImpactPayload {
   scenario_id: string;
   total_days_of_reserve_cover: number;
+  spr_days_of_cover?: number | null;
+  commercial_days_of_cover?: number | null;
   affected_import_volume_mbpd: number;
   market_metrics: MarketImpact;
   refinery_breakdown: RefineryImpact[];
@@ -99,7 +120,9 @@ export interface PipelineMeta {
   agent3_source: "live" | "mock";
   news_ok: boolean;
   demo_mode: boolean;
+  app_mode?: "LIVE" | "SIMULATION";
   model?: string | null;
+  brent_data_source?: string | null;
   latency_ms: LatencyMs;
   overall_confidence: number;
 }

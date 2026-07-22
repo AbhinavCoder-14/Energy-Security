@@ -1,94 +1,35 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { BlockMath } from "react-katex";
 import { Sigma, X } from "lucide-react";
+import "katex/dist/katex.min.css";
+import type { CalculationTrace } from "@/lib/types";
 
-export type AuditTopic = "brent" | "spr" | "volume" | null;
+export type AuditTopic = "brent" | "spr" | "volume" | "freight" | null;
 
 interface Props {
   topic: AuditTopic;
+  trace?: CalculationTrace | null;
   onClose: () => void;
 }
 
-function Formula({ children }: { children: React.ReactNode }) {
+const TITLES: Record<Exclude<AuditTopic, null>, string> = {
+  brent: "Brent Price Impact Formula",
+  spr: "Strategic Reserve Cover (SPR + Commercial)",
+  volume: "Disrupted Import Volume",
+  freight: "Freight & War Risk Premium",
+};
+
+function LatexBlock({ tex }: { tex: string }) {
   return (
-    <pre className="overflow-x-auto rounded-xl border border-hairline/70 bg-canvas/60 p-3.5 font-mono text-[12.5px] leading-6 text-primary">
-      {children}
-    </pre>
+    <div className="overflow-x-auto rounded-xl border border-[var(--wr-border)] bg-[#090C10]/80 p-3.5">
+      <BlockMath math={tex} />
+    </div>
   );
 }
 
-const CONTENT: Record<
-  Exclude<AuditTopic, null>,
-  { title: string; body: React.ReactNode }
-> = {
-  brent: {
-    title: "Brent Price Impact Formula",
-    body: (
-      <div className="space-y-3 text-[13.5px] leading-6 text-secondary">
-        <p>
-          Projected crude price change is the sum of three deterministic
-          components. No LLM estimation is used at this stage.
-        </p>
-        <Formula>{`P_total = P_base + dP_scarcity + dP_freight + P_war_risk`}</Formula>
-        <ul className="list-disc space-y-2 pl-5 marker:text-mute">
-          <li>
-            <strong className="text-primary">Scarcity:</strong>{" "}
-            <code className="font-mono text-[12.5px] text-primary">
-              (V_disrupted / V_global) x 120
-            </code>{" "}
-            with V_global at 102 MBPD.
-          </li>
-          <li>
-            <strong className="text-primary">Freight:</strong>{" "}
-            <code className="font-mono text-[12.5px] text-primary">
-              C_base x ((D_reroute - D_base) / D_base) x severity
-            </code>{" "}
-            (Hormuz 12d to Cape 26d).
-          </li>
-          <li>
-            <strong className="text-primary">War risk:</strong>{" "}
-            <code className="font-mono text-[12.5px] text-primary">
-              P_base x (RiskScore x 0.0015)
-            </code>
-            .
-          </li>
-        </ul>
-      </div>
-    ),
-  },
-  spr: {
-    title: "Strategic Petroleum Reserve Decay",
-    body: (
-      <div className="space-y-3 text-[13.5px] leading-6 text-secondary">
-        <p>National reserve cover clock, expressed in days remaining:</p>
-        <Formula>{`Days = SPR_Inventory / Daily_Shortfall
-     = 39,000,000 / V_import_shortfall`}</Formula>
-        <p>
-          Baseline peace (zero shortfall) pins cover at{" "}
-          <strong className="text-primary">9.5 days</strong>. The ring turns
-          amber under 8 days and red under 5 days.
-        </p>
-      </div>
-    ),
-  },
-  volume: {
-    title: "Affected Import Shortfall",
-    body: (
-      <div className="space-y-3 text-[13.5px] leading-6 text-secondary">
-        <p>For each threatened route in the dependency matrix:</p>
-        <Formula>{`route_vol = import_share x 5.0 MBPD x (risk_score / 100)
-total_MBPD = sum(route_vol)`}</Formula>
-        <p>
-          Hormuz carries 45% of India&apos;s import share, Bab-el-Mandeb 15%.
-          Severity scales linearly with Agent 1&apos;s 0 to 100 risk score.
-        </p>
-      </div>
-    ),
-  },
-};
-
-export function AuditModal({ topic, onClose }: Props) {
+export function AuditModal({ topic, trace, onClose }: Props) {
   const closeRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -107,7 +48,23 @@ export function AuditModal({ topic, onClose }: Props) {
   }, [topic, onClose]);
 
   if (!topic) return null;
-  const c = CONTENT[topic];
+
+  const latex = trace?.latex_formulas ?? {};
+  const steps = trace?.substitution_steps ?? [];
+
+  const topicLatex: Record<Exclude<AuditTopic, null>, string | undefined> = {
+    brent: latex.projected ?? latex.scarcity,
+    spr: latex.spr ?? latex.commercial,
+    volume: latex.v_disrupted,
+    freight: latex.freight ?? latex.war,
+  };
+
+  const topicSteps: Record<Exclude<AuditTopic, null>, string[]> = {
+    brent: steps.filter((s) => s.includes("P_") || s.includes("ΔP") || s.includes("Brent")),
+    spr: steps.filter((s) => s.startsWith("D_")),
+    volume: steps.filter((s) => s.includes("V_disrupted") || s.includes("R_max")),
+    freight: steps.filter((s) => s.includes("freight") || s.includes("war") || s.includes("ΔP_f")),
+  };
 
   return (
     <div
@@ -118,23 +75,23 @@ export function AuditModal({ topic, onClose }: Props) {
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg animate-scale-in rounded-2xl border border-hairline bg-surface p-6 shadow-lift"
+        className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-[var(--wr-border)] bg-[var(--wr-panel)] p-6"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-3">
-            <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-hairline bg-surface-2 text-secondary">
+            <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-[var(--wr-border)] bg-[var(--wr-panel-2)] text-[var(--wr-muted)]">
               <Sigma className="h-4 w-4" aria-hidden />
             </span>
             <div>
-              <p className="font-mono text-[10.5px] font-medium uppercase tracking-[0.16em] text-mute">
+              <p className="font-mono text-[10.5px] font-medium uppercase tracking-[0.16em] text-[var(--wr-muted)]">
                 Explain This Number · Agent 2
               </p>
               <h2
                 id="audit-title"
-                className="mt-1 text-[18px] font-semibold tracking-subhead text-primary"
+                className="mt-1 text-[18px] font-semibold tracking-tight text-[var(--wr-text)]"
               >
-                {c.title}
+                {TITLES[topic]}
               </h2>
             </div>
           </div>
@@ -142,13 +99,41 @@ export function AuditModal({ topic, onClose }: Props) {
             ref={closeRef}
             type="button"
             onClick={onClose}
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-hairline text-mute transition-colors hover:border-hairline-strong hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hairline-strong"
-            aria-label="Close"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-[var(--wr-border)] text-[var(--wr-muted)] transition-colors hover:border-[var(--wr-accent)] hover:text-[var(--wr-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--wr-accent)]"
+            aria-label="Close audit modal"
           >
             <X className="h-4 w-4" aria-hidden />
           </button>
         </div>
-        <div className="mt-4">{c.body}</div>
+
+        <div className="mt-4 space-y-4 text-[13.5px] leading-6 text-[var(--wr-muted)]">
+          {topicLatex[topic] && <LatexBlock tex={topicLatex[topic]!} />}
+
+          {topicSteps[topic].length > 0 && (
+            <div>
+              <p className="mb-2 font-mono text-[10px] uppercase tracking-wider text-[var(--wr-muted)]">
+                Substitution steps
+              </p>
+              <ul className="space-y-1.5 font-mono text-[12px]">
+                {topicSteps[topic].map((step, i) => (
+                  <li key={i} className="rounded-lg border border-[var(--wr-border)] bg-[var(--wr-panel-2)] px-3 py-2">
+                    {step}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {!topicLatex[topic] && topicSteps[topic].length === 0 && trace && (
+            <p className="font-mono text-[12px]">
+              {topic === "brent" && trace.formula_brent}
+              {topic === "spr" && trace.formula_spr}
+              {topic === "volume" && trace.formula_scarcity}
+              {topic === "freight" &&
+                `Freight $${trace.freight_premium_usd}/bbl + War $${trace.war_risk_premium_usd}/bbl`}
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );
