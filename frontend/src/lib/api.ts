@@ -1,5 +1,6 @@
 import {
   API_BASE,
+  type DashboardPayload,
   type ScenarioId,
   type UnifiedDashboardPayload,
 } from "@/lib/types";
@@ -123,6 +124,52 @@ export async function simulateStream(
     return simulate(scenarioId, { mock: handlers.mock, signal: handlers.signal });
   }
   return finalPayload;
+}
+
+/* ============================================================
+   Live Telemetry + What-If Scenario Engine (DashboardPayload)
+   ============================================================ */
+
+/** GET /api/telemetry/live -> steady-state DashboardPayload. */
+export async function getLiveTelemetry(
+  options: SimulateOptions = {},
+): Promise<DashboardPayload> {
+  const url = new URL(`${API_BASE}/api/telemetry/live`);
+  if (options.mock === true) url.searchParams.set("mock", "true");
+  if (options.mock === false) url.searchParams.set("mock", "false");
+
+  const res = await fetch(url.toString(), {
+    cache: "no-store",
+    signal: options.signal,
+  });
+
+  if (!res.ok) {
+    throw new ApiError(res.status, await res.text());
+  }
+
+  return (await res.json()) as DashboardPayload;
+}
+
+/** POST /api/simulate/{id} -> deterministic what-if DashboardPayload. */
+export async function simulateScenario(
+  scenarioId: string,
+  options: SimulateOptions = {},
+): Promise<DashboardPayload> {
+  const url = new URL(`${API_BASE}/api/simulate/${scenarioId}`);
+  if (options.mock === true) url.searchParams.set("mock", "true");
+  if (options.mock === false) url.searchParams.set("mock", "false");
+
+  const res = await fetch(url.toString(), {
+    method: "POST",
+    cache: "no-store",
+    signal: options.signal,
+  });
+
+  if (!res.ok) {
+    throw new ApiError(res.status, await res.text());
+  }
+
+  return (await res.json()) as DashboardPayload;
 }
 
 export function formatApiError(e: unknown): string {

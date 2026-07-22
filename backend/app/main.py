@@ -26,13 +26,21 @@ load_dotenv(os.path.join(_PROJECT_ROOT, ".env"))
 load_dotenv()
 
 from app.agent_one import analyze_route_risk_with_ml
-from app.agent_three import generate_procurement_strategy
-from app.agent_two import calculate_disruption_impact
-from app.config import LLM_MODEL, SIMULATE_WALL_CLOCK_BUDGET_S, resolve_app_mode
+from app.agent_three import generate_procurement_strategy, generate_rerouting_strategy
+from app.agent_two import build_dashboard_payload, calculate_disruption_impact
+from app.config import (
+    LLM_MODEL,
+    LIVE_BASELINE_BRENT,
+    SCENARIO_DISRUPTION_MAP,
+    SIMULATE_WALL_CLOCK_BUDGET_S,
+    resolve_app_mode,
+)
 from app.schemas import (
     SCENARIO_CATALOG,
+    DashboardPayload,
     GeopoliticalRiskPayload,
     LatencyMs,
+    LiveBrentQuote,
     PipelineMeta,
     UnifiedDashboardPayload,
 )
@@ -73,6 +81,35 @@ def _is_simulation_mode(mock: Optional[bool]) -> bool:
     if mock is False:
         return False
     return resolve_app_mode() == "SIMULATION"
+
+
+def _resolve_live_brent_quote() -> LiveBrentQuote:
+    """Live Brent for telemetry/scenario engine; fall back to LIVE_BASELINE_BRENT."""
+    from datetime import datetime, timezone
+
+    try:
+        return get_live_brent(require_live=False)
+    except Exception as e:
+        print(f"[main] Live Brent fetch failed ({e}); using baseline ${LIVE_BASELINE_BRENT}")
+        return LiveBrentQuote(
+            live_brent_price=LIVE_BASELINE_BRENT,
+            currency="USD",
+            timestamp=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            data_source="YahooFinance Live",
+        )
+
+
+def _risk_overlay_from_agent1(scenario_id: str, *, simulation_mode: bool) -> dict:
+    """Run Agent 1 and return {route_name: risk_score} for map overlays."""
+    try:
+        a1 = analyze_route_risk_with_ml(scenario_id, force_mock=simulation_mode)
+        return {
+            t.route_name: float(t.base_risk_score)
+            for t in a1.payload.active_threats
+        }
+    except Exception as e:
+        print(f"[main] Agent 1 overlay failed: {e}")
+        return {}
 
 
 def _load_scenarios() -> dict:
@@ -299,6 +336,70 @@ async def simulate_scenario_stream(
             "X-Accel-Buffering": "no",
         },
     )
+
+
+@app.get("/api/telemetry/live", response_model=DashboardPayload)
+async def live_telemetry(
+    mock: Optional[bool] = Query(
+        None, description="Force SIMULATION path for Agent 1 overlay"
+    ),
+):
+    """
+    Steady-state live dashboard: 0 disruption, flat graphs, Clear map statuses.
+    Live Brent baseline (fallback $82.50); Agent 1 news → risk overlay only.
+    """
+    simulation_mode = _is_simulation_mode(mock)
+    quote = _resolve_live_brent_quote()
+    overlay = _risk_overlay_from_agent1("baseline_peace", simulation_mode=simulation_mode)
+    return build_dashboard_payload(
+        "live_telemetry",
+        quote.live_brent_price,
+        overlay,
+        is_live=True,
+        brent_data_source=quote.data_source,
+        system_rationale="Live telemetry steady state — fixed 0 disruption baseline.",
+    )
+
+
+@app.post("/api/simulate/{scenario_id}", response_model=DashboardPayload)
+async def simulate_scenario_post(
+    scenario_id: str,
+    mock: Optional[bool] = Query(
+        None, description="Force SIMULATION path (skip live LLM for Agent 3)"
+    ),
+):
+    """
+    Deterministic country-cut what-if engine → DashboardPayload.
+    Coexists with GET /api/simulate/{id} (legacy UnifiedDashboardPayload).
+    """
+    canonical = {
+        "hormuz_closure": "strait_of_hormuz_closure",
+    }.get(scenario_id, scenario_id)
+
+    if canonical not in SCENARIO_DISRUPTION_MAP and scenario_id not in SCENARIO_DISRUPTION_MAP:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Scenario '{scenario_id}' not found in SCENARIO_DISRUPTION_MAP.",
+        )
+
+    simulation_mode = _is_simulation_mode(mock)
+    quote = _resolve_live_brent_quote()
+    overlay = _risk_overlay_from_agent1(canonical, simulation_mode=simulation_mode)
+
+    math_payload = build_dashboard_payload(
+        canonical,
+        quote.live_brent_price,
+        overlay,
+        is_live=False,
+        brent_data_source=quote.data_source,
+    )
+    directives = generate_rerouting_strategy(
+        canonical,
+        math_payload,
+        quote.live_brent_price,
+        force_mock=simulation_mode,
+    )
+    return math_payload.model_copy(update={"procurement_directives": directives})
 
 
 if __name__ == "__main__":

@@ -67,5 +67,28 @@
       ],
       "system_rationale": "Acute kinetic escalation in the Bab-el-Mandeb / Red Sea corridor forcing Cape of Good Hope reroutes and elevated war-risk insurance."
     }
+  },
+  "secondary_sanctions_shock": {
+    "risk_data": {
+      "scenario_id": "secondary_sanctions_shock",
+      "timestamp": "2026-07-20T00:00:00Z",
+      "active_threats": [
+        {
+          "route_name": "Bab_el_Mandeb",
+          "base_risk_score": 55.0,
+          "risk_delta": 30.0,
+          "primary_threat_driver": "Secondary sanctions compliance chill on Russian-origin barrels and shadow-fleet insurance",
+          "confidence_score": 90.0
+        },
+        {
+          "route_name": "Strait_of_Hormuz",
+          "base_risk_score": 25.0,
+          "risk_delta": 5.0,
+          "primary_threat_driver": "Indirect market tightening from sanctions spillover",
+          "confidence_score": 82.0
+        }
+      ],
+      "system_rationale": "Secondary sanctions shock severs Russian medium-sour import flows into India, forcing Atlantic-basin and SPR substitution."
+    }
   }
 }

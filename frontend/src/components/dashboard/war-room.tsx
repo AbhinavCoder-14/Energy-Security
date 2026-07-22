@@ -2,125 +2,92 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AlertOctagon } from "lucide-react";
-import { mapPayloadToScenario, scenarios as catalogScenarios, type Scenario } from "@/lib/war-room-data";
-import { SCENARIO_CATALOG, type PipelineMeta, type ScenarioId } from "@/lib/types";
-import { formatApiError, simulateStream } from "@/lib/api";
-import { gsap, ScrollTrigger, useGSAP, prefersReducedMotion } from "@/lib/gsap";
+import {
+  COMMAND_SCENARIOS,
+  type CommandScenarioId,
+  type DashboardPayload,
+} from "@/lib/types";
+import { formatApiError, getLiveTelemetry, simulateScenario } from "@/lib/api";
+import { gsap, useGSAP, prefersReducedMotion } from "@/lib/gsap";
 import { Navigation } from "@/components/landing/navigation";
 import { FooterSection } from "@/components/landing/footer-section";
-import { ScenarioTriggers } from "./scenario-triggers";
-import { ImpactMetrics } from "./impact-metrics";
-import { ChokepointMatrix } from "./chokepoint-matrix";
-import { RefineryHealth } from "./refinery-health";
-import { ExecutiveBrief } from "./executive-brief";
-import { SectionHeading } from "./section-heading";
-import { AuditModal, type AuditTopic } from "@/components/AuditModal";
 import { Arc } from "@/components/ui/arc";
+import { AuditModal, type AuditTopic } from "@/components/AuditModal";
+import { CommandHeader } from "./command-header";
+import { ScenarioControlBar } from "./scenario-control-bar";
+import { KpiStrip } from "./kpi-strip";
+import { WorldMapPanel } from "./world-map-panel";
+import { AnalyticsGraphs } from "./analytics-graphs";
+import { SovereignDependencyGrid } from "./sovereign-dependency-grid";
+import { RefineryHealthCards } from "./refinery-health-cards";
+import { ExecutiveBriefingPanel } from "./executive-briefing-panel";
+import { SectionHeading } from "./section-heading";
 
-const STAGE_LABELS: Record<string, string> = {
-  ingest: "Ingesting intelligence",
-  risk: "Agent 1 — risk parse",
-  market: "Fetching live Brent quote",
-  impact: "Agent 2 — impact math",
-  orchestration: "Agent 3 — procurement",
-  done: "Pipeline complete",
-};
+const DEFAULT_ID: CommandScenarioId = "live_telemetry";
 
 export function WarRoom() {
-  const [activeId, setActiveId] = useState<string>(SCENARIO_CATALOG[0].id);
-  const [launchingId, setLaunchingId] = useState<string | null>(null);
-  const [pipelineStage, setPipelineStage] = useState<string | null>(null);
-  const [active, setActive] = useState<Scenario | null>(null);
-  const [meta, setMeta] = useState<PipelineMeta | null>(null);
+  const [activeId, setActiveId] = useState<CommandScenarioId>(DEFAULT_ID);
+  const [launchingId, setLaunchingId] = useState<CommandScenarioId | null>(null);
+  const [data, setData] = useState<DashboardPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [auditTopic, setAuditTopic] = useState<AuditTopic>(null);
   const abortRef = useRef<AbortController | null>(null);
   const rootRef = useRef<HTMLElement>(null);
 
-  const runScenario = useCallback(async (id: string) => {
+  const run = useCallback(async (id: CommandScenarioId) => {
     abortRef.current?.abort();
     const ac = new AbortController();
     abortRef.current = ac;
     setLaunchingId(id);
-    setPipelineStage("ingest");
     setError(null);
 
+    const scenario = COMMAND_SCENARIOS.find((s) => s.id === id);
+    const mock = process.env.NEXT_PUBLIC_FORCE_MOCK === "1" ? true : undefined;
+
     try {
-      const payload = await simulateStream(id as ScenarioId, {
-        signal: ac.signal,
-        mock: process.env.NEXT_PUBLIC_FORCE_MOCK === "1" ? true : false,
-        onProgress: (p) => setPipelineStage(p.stage),
-      });
-      const mapped = mapPayloadToScenario(payload, SCENARIO_CATALOG);
-      setActive(mapped);
-      setMeta(payload.meta);
+      const payload =
+        scenario?.kind === "live"
+          ? await getLiveTelemetry({ signal: ac.signal, mock })
+          : await simulateScenario(id, { signal: ac.signal, mock });
+      setData(payload);
       setActiveId(id);
-      setPipelineStage(null);
     } catch (e) {
       if ((e as Error)?.name === "AbortError") return;
       setError(formatApiError(e));
-      setPipelineStage(null);
     } finally {
       setLaunchingId(null);
     }
   }, []);
 
   useEffect(() => {
-    runScenario(SCENARIO_CATALOG[0].id);
+    run(DEFAULT_ID);
     return () => abortRef.current?.abort();
-  }, [runScenario]);
+  }, [run]);
 
-  const handleLaunch = useCallback(
-    (id: string) => {
-      if (id === activeId && !error) return;
+  const handleSelect = useCallback(
+    (id: CommandScenarioId) => {
       if (id === launchingId) return;
-      runScenario(id);
+      run(id);
     },
-    [activeId, error, launchingId, runScenario],
+    [launchingId, run],
   );
 
   useGSAP(
     () => {
       if (prefersReducedMotion()) {
         gsap.set("[data-wr-reveal]", { opacity: 1, y: 0 });
-        gsap.set(".wr-batch", { opacity: 1, y: 0 });
         return;
       }
-
       gsap.fromTo(
         "[data-wr-reveal]",
-        { opacity: 0, y: 18 },
-        { opacity: 1, y: 0, duration: 0.6, ease: "power2.out", stagger: 0.1 },
+        { opacity: 0, y: 16 },
+        { opacity: 1, y: 0, duration: 0.55, ease: "power2.out", stagger: 0.09 },
       );
-
-      const batchTargets = gsap.utils.toArray<HTMLElement>(".wr-batch");
-      if (batchTargets.length === 0) return;
-
-      gsap.set(batchTargets, { opacity: 0, y: 22 });
-      ScrollTrigger.batch(batchTargets, {
-        start: "top 85%",
-        once: true,
-        onEnter: (elements) => {
-          gsap.to(elements, {
-            opacity: 1,
-            y: 0,
-            duration: 0.55,
-            ease: "power2.out",
-            stagger: 0.08,
-            overwrite: "auto",
-          });
-        },
-      });
     },
-    { scope: rootRef, dependencies: [active?.id] },
+    { scope: rootRef, dependencies: [data?.scenario_id] },
   );
 
-  const sourceBadge =
-    meta?.app_mode === "LIVE" && meta?.agent1_source === "live"
-      ? { label: "LIVE TELEMETRY", tone: "var(--wr-safe)" }
-      : { label: "DEMO SAFETY NET", tone: "var(--wr-warn)" };
-
-  const initialLoading = !active && !error;
+  const initialLoading = !data && !error;
 
   return (
     <div className="theme-landing flex min-h-[100dvh] flex-col bg-background text-foreground">
@@ -129,49 +96,20 @@ export function WarRoom() {
       <main ref={rootRef} className="war-room flex-1">
         <div className="wr-grid-bg min-h-full">
           <div className="mx-auto flex max-w-[1600px] flex-col gap-8 px-4 pb-12 pt-28 lg:gap-10 lg:px-10 lg:pt-32">
-            <header data-wr-reveal className="flex max-w-3xl flex-col gap-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="font-mono text-[11px] tracking-wider text-[var(--wr-muted)]">
-                  Supply chain resilience
-                </p>
-                {meta && (
-                  <span
-                    className="rounded-md border px-2 py-0.5 font-mono text-[10px] tracking-wider"
-                    style={{
-                      color: sourceBadge.tone,
-                      borderColor: `color-mix(in oklch, ${sourceBadge.tone} 35%, transparent)`,
-                      backgroundColor: `color-mix(in oklch, ${sourceBadge.tone} 12%, transparent)`,
-                    }}
-                  >
-                    {sourceBadge.label}
-                  </span>
-                )}
-                {meta && (
-                  <span className="font-mono text-[10px] text-[var(--wr-muted)]">
-                    {meta.latency_ms.total.toFixed(0)} ms · A1 {meta.agent1_source} · A3{" "}
-                    {meta.agent3_source}
-                  </span>
-                )}
-              </div>
-              <h1 className="font-display text-4xl tracking-tight text-[var(--wr-text)] lg:text-5xl">
-                War room
-              </h1>
-              <p className="text-[15px] leading-relaxed text-[var(--wr-muted)]">
-                Run a geopolitical shock simulation. Watch price, reserves, and chokepoint
-                risk update as the three-agent pipeline delivers a decision-grade brief.
-              </p>
-            </header>
+            <CommandHeader
+              isLive={data?.is_live_telemetry ?? true}
+              brentSource={data?.brent_data_source}
+            />
 
             <div data-wr-reveal>
-              <ScenarioTriggers
-                scenarios={catalogScenarios}
+              <ScenarioControlBar
                 activeId={activeId}
                 launchingId={launchingId}
-                onLaunch={handleLaunch}
+                onSelect={handleSelect}
               />
             </div>
 
-            {launchingId && pipelineStage && (
+            {launchingId && (
               <div
                 className="flex items-center gap-3 rounded-2xl border border-[var(--wr-border)] bg-[var(--wr-panel)] px-4 py-3"
                 aria-live="polite"
@@ -179,10 +117,12 @@ export function WarRoom() {
                 <Arc className="size-5 text-[var(--wr-accent)]" aria-hidden />
                 <div>
                   <p className="font-mono text-[11px] tracking-wider text-[var(--wr-muted)]">
-                    Pipeline
+                    Engine
                   </p>
                   <p className="text-[14px] text-[var(--wr-text)]">
-                    {STAGE_LABELS[pipelineStage] ?? pipelineStage}
+                    {launchingId === "live_telemetry"
+                      ? "Fetching live telemetry baseline"
+                      : "Running deterministic shock simulation"}
                   </p>
                 </div>
               </div>
@@ -195,7 +135,7 @@ export function WarRoom() {
               >
                 <AlertOctagon className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
                 <div>
-                  <p className="font-medium">Simulation unavailable</p>
+                  <p className="font-medium">Command center unavailable</p>
                   <p className="mt-1 opacity-90">{error}</p>
                 </div>
               </div>
@@ -205,59 +145,54 @@ export function WarRoom() {
               <div className="flex flex-col items-center gap-4 py-16" aria-busy="true">
                 <Arc className="size-10 text-foreground" role="status" aria-label="Loading" />
                 <p className="font-mono text-xs tracking-widest text-muted-foreground">
-                  Initializing war room pipeline
+                  Initializing command center telemetry
                 </p>
               </div>
             )}
 
-            {active && (
+            {data && (
               <>
                 <div data-wr-reveal>
-                  <ImpactMetrics scenario={active} onAudit={setAuditTopic} />
+                  <KpiStrip data={data} onAudit={setAuditTopic} />
                 </div>
 
-                <section aria-label="Tactical brief">
-                  <div className="wr-batch">
-                    <SectionHeading
-                      index="03"
-                      title="Tactical brief"
-                      description="Where risk sits on the water, how plants are holding, and what to do next."
-                    />
-                  </div>
+                <section aria-label="Geospatial threat board">
+                  <SectionHeading
+                    index="01"
+                    title="Threat board"
+                    description="Chokepoint risk on the water and deterministic reroute paths into India."
+                  />
+                  <WorldMapPanel data={data} />
+                </section>
 
-                  <div className="grid gap-4 lg:grid-cols-2 lg:gap-5">
-                    <ChokepointMatrix scenario={active} />
-                    <RefineryHealth scenario={active} />
-                  </div>
+                <section aria-label="Projections">
+                  <SectionHeading
+                    index="02"
+                    title="Projections"
+                    description="Strategic reserve depletion and Brent price escalation over the projection window."
+                  />
+                  <AnalyticsGraphs data={data} />
+                </section>
 
-                  <div className="mt-4 lg:mt-5">
-                    <ExecutiveBrief scenario={active} />
+                <section aria-label="Sovereign dependency and refineries">
+                  <SectionHeading
+                    index="03"
+                    title="Structural exposure"
+                    description="Sovereign crude dependency, chemical slate risk, and refinery run-days."
+                  />
+                  <div className="flex flex-col gap-4 lg:gap-5">
+                    <SovereignDependencyGrid data={data} />
+                    <RefineryHealthCards data={data} />
                   </div>
+                </section>
 
-                  {active.intelSnippets && active.intelSnippets.length > 0 && (
-                    <div className="wr-batch mt-4 rounded-2xl border border-[var(--wr-border)] bg-[var(--wr-panel)] p-5 lg:mt-5">
-                      <p className="font-mono text-[10px] tracking-widest text-[var(--wr-muted)]">
-                        AGENT 1 · INTEL SNIPPETS
-                      </p>
-                      <ul className="mt-3 space-y-2">
-                        {active.intelSnippets.map((s, i) => (
-                          <li
-                            key={`${s.route_name}-${i}`}
-                            className="text-[13px] leading-snug text-[var(--wr-text)]"
-                          >
-                            <span className="font-mono text-[10px] text-[var(--wr-muted)]">
-                              {s.route_name.replace(/_/g, " ")}
-                            </span>
-                            <span className="mx-1.5 opacity-40">·</span>
-                            {s.title}
-                            {s.source ? (
-                              <span className="text-[var(--wr-muted)]"> ({s.source})</span>
-                            ) : null}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                <section aria-label="Executive briefing">
+                  <SectionHeading
+                    index="04"
+                    title="Executive briefing"
+                    description="Cabinet-ready memo and ranked procurement reroute directives."
+                  />
+                  <ExecutiveBriefingPanel data={data} />
                 </section>
               </>
             )}
@@ -267,11 +202,7 @@ export function WarRoom() {
 
       <FooterSection />
 
-      <AuditModal
-        topic={auditTopic}
-        trace={active?.calculationTrace}
-        onClose={() => setAuditTopic(null)}
-      />
+      <AuditModal topic={auditTopic} data={data} onClose={() => setAuditTopic(null)} />
     </div>
   );
 }

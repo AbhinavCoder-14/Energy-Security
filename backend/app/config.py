@@ -146,3 +146,114 @@ AGENT3_LLM_TIMEOUT_S = 16.0
 SIMULATE_WALL_CLOCK_BUDGET_S = 30.0
 NEWS_CACHE_TTL_S = 60.0
 MARKET_CACHE_TTL_S = 60.0
+
+# ---------------------------------------------------------------------------
+# Live telemetry + what-if scenario engine (additive; does not replace above)
+# ---------------------------------------------------------------------------
+
+LIVE_BASELINE_BRENT = float(os.getenv("LIVE_BASELINE_BRENT", "82.50"))
+NATIONAL_IMPORT_DEPENDENCE_PCT = 88.0
+
+COUNTRY_SUPPLY_MATRIX = {
+    "Iraq": {
+        "import_share_pct": 19.9,
+        "crude_grade": "Heavy-Sour",
+        "primary_route": "Strait_of_Hormuz",
+    },
+    "Russia": {
+        "import_share_pct": 17.9,
+        "crude_grade": "Medium-Sour",
+        "primary_route": "Bab_el_Mandeb",
+    },
+    "Saudi": {
+        "import_share_pct": 16.0,
+        "crude_grade": "Medium/Heavy-Sour",
+        "primary_route": "Strait_of_Hormuz+Red_Sea",
+    },
+    "UAE": {
+        "import_share_pct": 11.0,
+        "crude_grade": "Light-Sweet",
+        "primary_route": "Strait_of_Hormuz",
+    },
+    "Diversified_Others": {
+        "import_share_pct": 35.2,
+        "crude_grade": "Mixed-Spot",
+        "primary_route": "Long_Haul",
+    },
+}
+
+CHOKEPOINT_MAP = {
+    "Strait_of_Hormuz": {
+        "coordinates": [26.56, 56.25],
+        "india_import_share": 0.48,
+        "base_transit_days": 12,
+        "reroute_transit_days": 26,
+        "base_freight_cost": 3.00,
+    },
+    "Bab_el_Mandeb": {
+        "coordinates": [12.58, 43.33],
+        "india_import_share": 0.18,
+        "base_transit_days": 14,
+        "reroute_transit_days": 28,
+        "base_freight_cost": 3.50,
+    },
+    "Malacca_Strait": {
+        "coordinates": [1.43, 102.89],
+        "india_import_share": 0.05,
+        "base_transit_days": 10,
+        "reroute_transit_days": 10,
+        "base_freight_cost": 2.50,
+    },
+}
+
+ALTERNATIVE_SUPPLY_ORIGINS = {
+    "Brazil_Santos": {
+        "coordinates": [-23.96, -46.30],
+        "crude_grade": "Heavy-Sour",
+        "transit_days": 28,
+        "freight_usd_per_bbl": 5.50,
+        "max_available_mbpd": 0.8,
+    },
+    "US_Gulf_Coast": {
+        "coordinates": [29.95, -90.07],
+        "crude_grade": "Light-Sweet",
+        "transit_days": 32,
+        "freight_usd_per_bbl": 6.00,
+        "max_available_mbpd": 1.0,
+    },
+    "West_Africa_Nigeria": {
+        "coordinates": [4.37, 6.23],
+        "crude_grade": "Medium-Sweet",
+        "transit_days": 20,
+        "freight_usd_per_bbl": 4.20,
+        "max_available_mbpd": 0.5,
+    },
+    "India_Domestic_SPR": {
+        "coordinates": [17.68, 83.21],
+        "crude_grade": "Heavy-Sour_Mimic",
+        "transit_days": 1,
+        "freight_usd_per_bbl": 0.20,
+        "max_available_mbpd": 1.5,
+    },
+}
+
+# Country-cut fractions per scenario (fraction of that country's import volume lost)
+SCENARIO_DISRUPTION_MAP = {
+    "strait_of_hormuz_closure": {
+        "Iraq": 1.0,
+        "UAE": 1.0,
+        "Saudi": 0.6,
+    },
+    "hormuz_closure": {  # alias
+        "Iraq": 1.0,
+        "UAE": 1.0,
+        "Saudi": 0.6,
+    },
+    "bab_el_mandeb_escalation": {
+        "Russia": 0.7,
+        "Saudi": 0.4,  # Red Sea leg of Saudi barrels
+    },
+    "secondary_sanctions_shock": {
+        "Russia": 1.0,
+    },
+}

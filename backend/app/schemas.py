@@ -23,6 +23,7 @@ class RouteRisk(BaseModel):
     risk_score: Optional[float] = Field(None, ge=0.0, le=100.0)
     chokepoint_status: Literal["Clear", "Elevated", "Critical Blockade"] = "Clear"
     threat_drivers: List[str] = Field(default_factory=list)
+    transit_days_delay: Optional[float] = None
 
     @model_validator(mode="after")
     def sync_risk_score(self) -> "RouteRisk":
@@ -55,6 +56,8 @@ class RefineryImpact(BaseModel):
     capacity_utilization_pct: float = Field(..., ge=0.0, le=100.0)
     shortfall_barrels_per_day: int
     operating_run_days_remaining: float
+    chemical_slate_alert: Optional[bool] = None
+    alert_message: Optional[str] = None
 
 
 class MarketImpact(BaseModel):
@@ -67,6 +70,8 @@ class MarketImpact(BaseModel):
     brent_delta_usd: Optional[float] = None
     data_source: Optional[str] = None
     war_risk_premium_usd: Optional[float] = None
+    scarcity_premium_usd: Optional[float] = None
+    daily_fiscal_loss_usd: Optional[float] = None
 
 
 class FreightRouteBreakdown(BaseModel):
@@ -188,4 +193,79 @@ SCENARIO_CATALOG: Dict[str, ScenarioCatalogItem] = {
         blurb="Red Sea kinetic escalation forcing Cape diversions and freight spikes.",
         codename="SCN-02 / BAB-EL-MANDEB",
     ),
+    "secondary_sanctions_shock": ScenarioCatalogItem(
+        id="secondary_sanctions_shock",
+        label="Secondary Sanctions Shock",
+        severity="crit",
+        blurb="Secondary sanctions sever Russian medium-sour barrels into India.",
+        codename="SCN-03 / SANCTIONS SHOCK",
+    ),
 }
+
+
+# ---------------------------------------------------------------------------
+# Live telemetry / what-if scenario engine contracts (additive)
+# ---------------------------------------------------------------------------
+
+
+class CountrySupplyShare(BaseModel):
+    country: str
+    import_share_pct: float
+    volume_mbpd: float
+    crude_grade: str
+    primary_route: str
+    disrupted_volume_mbpd: float = 0.0
+    cut_fraction: float = 0.0
+
+
+class MapFeature(BaseModel):
+    id: str
+    name: str
+    coordinates: List[float] = Field(..., min_length=2, max_length=2)
+    risk_level: float = Field(..., ge=0.0, le=100.0)
+    status: Literal["Clear", "Elevated", "Critical Blockade"] = "Clear"
+    threat_driver: str = ""
+    disrupted_volume_mbpd: float = 0.0
+
+
+class TimeSeriesData(BaseModel):
+    labels: List[str]
+    values: List[float]
+
+
+class RouteAlternative(BaseModel):
+    origin_name: str
+    origin_coordinates: List[float] = Field(..., min_length=2, max_length=2)
+    volume_mbpd: float
+    transit_days: int
+    freight_usd_per_bbl: float
+    crude_grade: str
+    slate_compatibility: str
+    priority_rank: int
+    justification: str = ""
+
+
+class ReroutingSummary(BaseModel):
+    actionable_memo: str
+    recommended_actions: List[RouteAlternative]
+
+
+class DashboardPayload(BaseModel):
+    scenario_id: str
+    is_live_telemetry: bool
+    timestamp: str
+    baseline_brent_usd: float
+    projected_brent_usd: float
+    national_import_dependence_pct: float
+    v_disrupted_mbpd: float
+    spr_days_remaining: float
+    lost_grades: List[str] = Field(default_factory=list)
+    market_impact: MarketImpact
+    country_breakdown: List[CountrySupplyShare]
+    map_features: List[MapFeature]
+    spr_depletion_curve: TimeSeriesData
+    price_projection_curve: TimeSeriesData
+    refinery_impacts: List[RefineryImpact]
+    procurement_directives: ReroutingSummary
+    system_rationale: str = ""
+    brent_data_source: Optional[str] = None
